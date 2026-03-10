@@ -141,8 +141,8 @@ const ZOOM_STEP = 1.15;
 const DEFAULT_ZOOM = 1;
 const MIN_RENDERER_INIT_SIZE = 16;
 const RENDERER_INIT_TIMEOUT_MS = 6_000;
-const WATCHDOG_LONG_FRAME_MS = 1_200;
-const WATCHDOG_MAX_CONSECUTIVE_LONG_FRAMES = 2;
+const WATCHDOG_LONG_FRAME_MS = 2_500;
+const WATCHDOG_MAX_CONSECUTIVE_LONG_FRAMES = 3;
 const MAX_RECOVERABLE_FRAME_ERRORS = 2;
 const CONSOLE_MONITOR_KEY = "__screepsOfficialConsoleMonitor";
 interface OfficialRendererGameData {
@@ -1331,12 +1331,16 @@ export function RoomGameplayMap({
       if (elapsed > WATCHDOG_LONG_FRAME_MS) {
         runtime.consecutiveLongFrames += 1;
         if (runtime.consecutiveLongFrames >= WATCHDOG_MAX_CONSECUTIVE_LONG_FRAMES) {
-          hardKillRenderer(
-            `Official renderer stopped after repeated long frames (> ${WATCHDOG_LONG_FRAME_MS}ms).`,
-            "frame",
-            "destroyed"
-          );
-          return;
+          if (renderProfileRef.current === "safe") {
+            runtime.consecutiveLongFrames = 0;
+          } else {
+            hardKillRenderer(
+              `Official renderer stopped after repeated long frames (> ${WATCHDOG_LONG_FRAME_MS}ms).`,
+              "frame",
+              "destroyed"
+            );
+            return;
+          }
         }
       } else {
         runtime.consecutiveLongFrames = 0;
