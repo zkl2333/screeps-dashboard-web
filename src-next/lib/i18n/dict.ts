@@ -384,6 +384,16 @@ const zh = {
   "rankings.prev": "上一页",
   "rankings.next": "下一页",
   "rankings.page": "页码",
+
+  "trends.title": "运营趋势",
+  "trends.range1h": "1 小时",
+  "trends.range24h": "24 小时",
+  "trends.range7d": "7 天",
+  "trends.energyHarvested": "能量采集",
+  "trends.energyControl": "升级能量",
+  "trends.energyConstruction": "建设能量",
+  "trends.creepsProduced": "Creep 生产",
+  "trends.empty": "暂无统计数据。",
 } as const;
 
 export type TranslationKey = keyof typeof zh;
@@ -772,6 +782,16 @@ const en: Record<TranslationKey, string> = {
   "rankings.prev": "Previous",
   "rankings.next": "Next",
   "rankings.page": "Page",
+
+  "trends.title": "Trends",
+  "trends.range1h": "1H",
+  "trends.range24h": "24H",
+  "trends.range7d": "7D",
+  "trends.energyHarvested": "Energy Harvested",
+  "trends.energyControl": "Control Energy",
+  "trends.energyConstruction": "Construction",
+  "trends.creepsProduced": "Creeps Produced",
+  "trends.empty": "No stats data.",
 };
 
 export const messages: Record<Locale, Record<TranslationKey, string>> = {

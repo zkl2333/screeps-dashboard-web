@@ -34,6 +34,7 @@ import { useSettingsStore } from "../stores/settings-store";
 import { MetricCell } from "./metric-cell";
 import { MetricBar } from "./metric-bar";
 import { CircularProgress } from "./circular-progress";
+import { StatsTrendPanel } from "./stats-trend-panel";
 import { TerrainThumbnail } from "./terrain-thumbnail";
 
 const EMPTY_ROOM_THUMBNAILS: ReadonlyArray<RoomThumbnail> = [];
@@ -822,6 +823,8 @@ export function DashboardPanel({ onInitialLoadStateChange }: DashboardPanelProps
               ) : null}
             </div>
           </article>
+
+          {!isPublicProfileView ? <StatsTrendPanel /> : null}
 
           {groupedRooms.length ? (
             <>
