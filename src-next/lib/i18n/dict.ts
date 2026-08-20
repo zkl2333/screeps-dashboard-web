@@ -342,6 +342,11 @@ const zh = {
   "rooms.seasonLabel": "赛季",
   "rooms.loading": "正在加载房间数据...",
   "rooms.openRankings": "打开排行榜",
+  "rooms.myRooms": "我的房间",
+  "rooms.selectMyRoom": "快捷选择我的房间",
+  "rooms.myRoomsLoading": "正在加载我的房间...",
+  "rooms.myRoomsEmpty": "暂无自己的房间",
+  "rooms.myRoomsError": "房间列表加载失败",
   "rooms.searchLabel": "房间名",
   "rooms.openDetail": "查看房间",
   "rooms.searchHint": "请输入有效房间名（如 W8N3）。",
@@ -740,6 +745,11 @@ const en: Record<TranslationKey, string> = {
   "rooms.seasonLabel": "Season",
   "rooms.loading": "Loading room data...",
   "rooms.openRankings": "Open rankings",
+  "rooms.myRooms": "My rooms",
+  "rooms.selectMyRoom": "Quick select my room",
+  "rooms.myRoomsLoading": "Loading my rooms...",
+  "rooms.myRoomsEmpty": "No owned rooms",
+  "rooms.myRoomsError": "Failed to load rooms",
   "rooms.searchLabel": "Room Name",
   "rooms.openDetail": "Open room",
   "rooms.searchHint": "Enter a valid room name (e.g., W8N3).",
@@ -800,4 +810,3 @@ export const messages: Record<Locale, Record<TranslationKey, string>> = {
 };
 
 export const defaultLocale: Locale = "zh-CN";
-
