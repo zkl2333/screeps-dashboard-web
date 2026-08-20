@@ -1,6 +1,6 @@
-# Docker Web 运行模式
+# Docker Web 部署
 
-此 fork 增加 Docker Web 运行模式：Next.js 静态导出由 Node 服务提供，并通过同源代理访问 Screeps API，避免浏览器 CORS 问题。Tauri 桌面和移动端行为保持不变。
+本项目是 Docker-only 的 Screeps Web Dashboard。Next.js 静态导出由 Node 服务提供，浏览器请求统一经同源代理转发到 Screeps，避免浏览器 CORS 问题。
 
 ## 启动
 
@@ -8,29 +8,19 @@
 docker compose up -d --build
 ```
 
-打开 <http://localhost:3200>。
-
-健康检查：
+打开 <http://localhost:3200>，健康检查：
 
 ```bash
 curl http://localhost:3200/healthz
 ```
 
-## 私服允许列表
+## 私服 allowlis
 
-默认只允许代理到 `https://screeps.com`。如果需要连接私服，必须显式加入允许列表：
+默认只允许 `https://screeps.com`。私服必须显式加入 `SCREEPS_ALLOWED_ORIGINS`，多个 origin 用逗号分隔。只填写可信的 `http(s)` origin，不包含 API path。
 
-```yaml
-services:
-  dashboard:
-    environment:
-      SCREEPS_ALLOWED_ORIGINS: https://screeps.com,https://screeps.example.com
-```
+## 安全建议
 
-只填写可信的 `http(s)` origin，不包含 API path。该 allowlist 防止容器成为开放代理或访问未授权的内网服务。
-
-## 凭据说明
-
-当前 Web 模式沿用上游登录模型：Token 或已保存密码存在浏览器 `localStorage` 中，请仅在可信设备上使用。浏览器将 Screeps 请求发送至同源 `/api/screeps-proxy`，代理再转发到允许列表中的服务器。
-
-此模式解决 Docker Web 访问和 CORS，不会把凭据迁移为服务端托管。服务端凭据模式应作为独立安全设计，不与首个 Docker 化提交混合。
+- 使用 HTTPS 和反向代理认证。
+- 不要直接把 Dashboard 端口暴露到不可信公网。
+- 当前登录 Token/密码仍由浏览器 localStorage 管理，请只在可信设备保存账号。
+- WebSocket 同源代理和服务端 session 将在后续迭代中补齐。

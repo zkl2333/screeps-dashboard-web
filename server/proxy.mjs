@@ -13,14 +13,26 @@ function normalizeOrigin(value) {
   return url.origin;
 }
 
-export function createProxyHandler({fetch: fetchImpl = globalThis.fetch}) {
+export function createProxyHandler({
+  fetch: fetchImpl = globalThis.fetch,
+  allowedOrigins = ['https://screeps.com'],
+  maxRequestBytes = 1_048_576,
+} = {}) {
+  const allowlist = new Set(allowedOrigins.map(normalizeOrigin));
 
   return async function handle(request) {
     if (request.method !== 'POST') return json(405, {error: 'Method not allowed'});
 
+    const declaredLength = Number(request.headers.get('content-length') || 0);
+    if (Number.isFinite(declaredLength) && declaredLength > maxRequestBytes) {
+      return json(413, {error: 'Request body is too large'});
+    }
+
     let input;
     try {
-      input = await request.json();
+      const raw = await request.text();
+      if (Buffer.byteLength(raw) > maxRequestBytes) return json(413, {error: 'Request body is too large'});
+      input = JSON.parse(raw);
     } catch {
       return json(400, {error: 'Invalid JSON'});
     }

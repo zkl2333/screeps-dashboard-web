@@ -1,7 +1,5 @@
 node_modules
-.git
-src-tauri
-target
-src-next/.next
-src-next/out
+.gi
+src-next/.nex
+src-next/ou
 *.log

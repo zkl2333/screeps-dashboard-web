@@ -1,9 +1,9 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
-COPY src-next ./src-next
-RUN npm run build:web
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile --ignore-scripts
+COPY src-next ./src-nex
+RUN pnpm run build
 
 FROM node:22-alpine
 WORKDIR /app

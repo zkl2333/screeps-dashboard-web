@@ -1,5 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
-import { hasTauriRuntime } from "../runtime/platform";
 import { normalizeBaseUrl, screepsRequest } from "./request";
 import type { ScreepsRealtimeEvent } from "./realtime-client";
 import type {
@@ -550,75 +548,6 @@ async function sendConsoleCommandByRequest(
   throw new Error(`Failed to execute console command: ${reason}`);
 }
 
-interface TauriConsoleExecuteRequest {
-  baseUrl: string;
-  token: string;
-  username: string;
-  code: string;
-  shard?: string | null;
-}
-
-interface TauriConsoleExecuteResponse {
-  ok: boolean;
-  feedback?: string | null;
-  error?: string | null;
-  usedVariant?: string | null;
-  triedVariants?: string[] | null;
-}
-
-class TauriConsoleBackendError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "TauriConsoleBackendError";
-  }
-}
-
-function isTauriConsoleBackendError(error: unknown): error is TauriConsoleBackendError {
-  return error instanceof TauriConsoleBackendError;
-}
-
-function normalizeConsoleVariants(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-  return value.filter(
-    (item): item is string => typeof item === "string" && item.trim().length > 0
-  );
-}
-
-async function sendConsoleCommandByTauri(
-  session: ScreepsSession,
-  code: string,
-  shardInput?: string
-): Promise<string | undefined> {
-  const request: TauriConsoleExecuteRequest = {
-    baseUrl: session.baseUrl,
-    token: session.token,
-    username: session.username,
-    code,
-    shard: normalizeShard(shardInput) ?? null,
-  };
-  const response = await invoke<TauriConsoleExecuteResponse>("screeps_console_execute", {
-    request,
-  });
-
-  if (!response.ok) {
-    const backendError = sanitizeText(
-      typeof response.error === "string" ? response.error : undefined
-    );
-    const triedVariants = normalizeConsoleVariants(response.triedVariants);
-    const variantsHint =
-      triedVariants.length > 0 ? ` (tried variants: ${triedVariants.join(", ")})` : "";
-    throw new TauriConsoleBackendError(
-      `${backendError ?? "Failed to execute console command."}${variantsHint}`
-    );
-  }
-
-  return sanitizeConsoleFeedback(
-    typeof response.feedback === "string" ? response.feedback : undefined
-  );
-}
-
 export function buildConsoleLocalStateKey(baseUrl: string, username: string): string {
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
   const normalizedUsername = username.trim().toLowerCase();
@@ -1016,24 +945,6 @@ export async function sendConsoleCommand(
   if (!trimmedCode) {
     throw new Error("Console command cannot be empty.");
   }
-
-  let feedback: string | undefined;
-  if (hasTauriRuntime()) {
-    try {
-      feedback = await sendConsoleCommandByTauri(session, trimmedCode, shardInput);
-    } catch (error) {
-      if (isTauriConsoleBackendError(error)) {
-        throw error;
-      }
-      feedback = await sendConsoleCommandByRequest(session, trimmedCode, shardInput);
-    }
-  } else {
-    feedback = await sendConsoleCommandByRequest(session, trimmedCode, shardInput);
-  }
-
-  return {
-    feedback,
-    raw: trimmedCode,
-    executedAt: new Date().toISOString(),
-  };
+  const feedback = await sendConsoleCommandByRequest(session, trimmedCode, shardInput);
+  return { feedback, raw: trimmedCode, executedAt: new Date().toISOString() };
 }

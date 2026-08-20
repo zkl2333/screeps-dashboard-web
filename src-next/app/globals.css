@@ -753,63 +753,6 @@ a {
   text-overflow: ellipsis;
 }
 
-.topbar-action {
-  -webkit-app-region: no-drag;
-}
-
-[data-tauri-drag-region] {
-  -webkit-app-region: drag;
-  user-select: none;
-}
-
-.window-controls {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding-left: 8px;
-  margin-left: 2px;
-  border-left: 1px solid var(--border);
-  -webkit-app-region: no-drag;
-}
-
-.window-control {
-  width: 32px;
-  height: 28px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: #050505;
-  color: #b6b6b6;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-}
-
-.window-control:hover {
-  border-color: #3a3a3a;
-  background: #101010;
-  color: #e0e0e0;
-}
-
-.window-control.close:hover {
-  border-color: #7d2e2e;
-  background: rgba(160, 32, 32, 0.25);
-  color: #ffd0d0;
-}
-
-.window-control:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.window-icon {
-  font-size: 0.72rem;
-  font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", monospace;
-  line-height: 1;
-}
-
 .shell-body {
   width: 100%;
   max-width: 100%;
@@ -4499,10 +4442,6 @@ a {
 
   .session-meta span {
     max-width: 148px;
-  }
-
-  .window-controls {
-    margin-left: auto;
   }
 
   .app-nav {
