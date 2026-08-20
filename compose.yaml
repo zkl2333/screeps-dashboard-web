@@ -1,0 +1,13 @@
+services:
+  dashboard:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3200:3000"
+    environment:
+      SCREEPS_ALLOWED_ORIGINS: https://screeps.com
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true

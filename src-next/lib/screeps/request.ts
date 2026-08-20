@@ -169,8 +169,32 @@ async function mapWithConcurrency<T, R>(
 }
 
 async function browserFallbackRequest(request: ScreepsRequest): Promise<ScreepsResponse> {
-  const url = buildApiUrl(request.baseUrl, request.endpoint, request.query);
+  const upstreamUrl = buildApiUrl(request.baseUrl, request.endpoint, request.query);
   const method = request.method ?? "GET";
+
+  // Docker/Web deployments use a same-origin proxy so credentials are not sent
+  // cross-origin and official/private servers do not need browser CORS support.
+  if (typeof window !== "undefined" && window.location.protocol.startsWith("http")) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), FALLBACK_TIMEOUT_MS);
+    try {
+      const response = await fetch("/api/screeps-proxy", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+        signal: controller.signal,
+      });
+      const payload = (await response.json()) as ScreepsResponse | { error?: string };
+      if (!response.ok || !("status" in payload)) {
+        throw new Error("error" in payload ? payload.error ?? "Proxy request failed" : "Proxy request failed");
+      }
+      return payload;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  const url = upstreamUrl;
   const headers = new Headers({
     Accept: "application/json",
   });

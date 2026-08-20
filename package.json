@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "cd src-next && next dev",
     "build": "cd src-next && next build",
+    "build:web": "cd src-next && next build --no-lint",
     "start": "cd src-next && next start",
+    "start:web": "node server/index.mjs",
+    "test:proxy": "node --test test/proxy.test.mjs",
     "assets:resource-icons": "node scripts/fetch-resource-thumbnails.mjs",
     "lint": "cd src-next && eslint .",
     "typecheck:web": "tsc --noEmit --incremental false -p src-next/tsconfig.json",
