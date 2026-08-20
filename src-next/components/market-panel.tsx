@@ -19,7 +19,7 @@ import {
 import { getResourceMeta, type ResourceMeta } from "../lib/screeps/resource-meta";
 import { useI18n } from "../lib/i18n/use-i18n";
 import type { TranslationKey } from "../lib/i18n/dict";
-import type { MarketOrderSummary, RoomSummary } from "../lib/screeps/types";
+import type { MarketOrderSummary, RoomSummary, ScreepsSession } from "../lib/screeps/types";
 import { useAuthStore } from "../stores/auth-store";
 import { useSettingsStore } from "../stores/settings-store";
 
@@ -337,10 +337,21 @@ function matchesFilter(meta: ResourceMeta, normalizedFilter: string): boolean {
 }
 
 export function MarketPanel() {
+  const session = useAuthStore((state) => state.session);
+  if (!session) {
+    return null;
+  }
+  return <MarketPanelContent session={session} />;
+}
+
+interface MarketPanelContentProps {
+  session: ScreepsSession;
+}
+
+function MarketPanelContent({ session }: MarketPanelContentProps) {
   const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const session = useAuthStore((state) => state.session);
   const refreshIntervalMs = useSettingsStore((state) => state.refreshIntervalMs);
 
   const resourceParam = searchParams.get("resource")?.trim() || "";
@@ -370,9 +381,6 @@ export function MarketPanel() {
   const [createOrderError, setCreateOrderError] = useState<string | null>(null);
   const [isCreateSubmitting, setIsCreateSubmitting] = useState(false);
 
-  if (!session) {
-    return null;
-  }
   const activeSession = session;
   const parsedShardParam = parseShard(shardParam);
   const requestedResourceShard = useMemo(() => {

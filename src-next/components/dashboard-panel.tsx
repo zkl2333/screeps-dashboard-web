@@ -28,7 +28,7 @@ import {
   toRoomMapOverlayKey,
   type RoomMapOverlay,
 } from "../lib/screeps/room-map-realtime";
-import type { RoomObjectSummary, RoomThumbnail } from "../lib/screeps/types";
+import type { RoomObjectSummary, RoomThumbnail, ScreepsSession } from "../lib/screeps/types";
 import { useAuthStore } from "../stores/auth-store";
 import { useSettingsStore } from "../stores/settings-store";
 import { MetricCell } from "./metric-cell";
@@ -246,8 +246,24 @@ interface DashboardPanelProps {
 }
 
 export function DashboardPanel({ onInitialLoadStateChange }: DashboardPanelProps) {
-  const { t, locale } = useI18n();
   const session = useAuthStore((state) => state.session);
+  if (!session) {
+    return null;
+  }
+  return (
+    <DashboardPanelContent
+      onInitialLoadStateChange={onInitialLoadStateChange}
+      session={session}
+    />
+  );
+}
+
+interface DashboardPanelContentProps extends DashboardPanelProps {
+  session: ScreepsSession;
+}
+
+function DashboardPanelContent({ onInitialLoadStateChange, session }: DashboardPanelContentProps) {
+  const { t, locale } = useI18n();
   const searchParams = useSearchParams();
   const refreshIntervalMs = useSettingsStore((state) => state.refreshIntervalMs);
   const [avatarCandidateIndex, setAvatarCandidateIndex] = useState(0);
@@ -273,10 +289,6 @@ export function DashboardPanel({ onInitialLoadStateChange }: DashboardPanelProps
   }, [requestedTargetUsername, session]);
   const isGuestSession = Boolean(session && !session.token.trim());
   const requiresPublicTarget = Boolean(isGuestSession && !externalTargetUsername);
-
-  if (!session) {
-    return null;
-  }
 
   const { data, error, isLoading, isValidating } = useSWR(
     requiresPublicTarget

@@ -14,7 +14,7 @@ docker compose up -d --build
 curl http://localhost:3200/healthz
 ```
 
-## 私服 allowlis
+## 私服 allowlist
 
 默认只允许 `https://screeps.com`。私服必须显式加入 `SCREEPS_ALLOWED_ORIGINS`，多个 origin 用逗号分隔。只填写可信的 `http(s)` origin，不包含 API path。
 
