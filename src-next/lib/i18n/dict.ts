@@ -399,6 +399,11 @@ const zh = {
   "trends.energyConstruction": "建设能量",
   "trends.creepsProduced": "Creep 生产",
   "trends.empty": "暂无统计数据。",
+  "runtime.title": "CPU / Bucket 监控",
+  "runtime.cpu": "CPU 使用",
+  "runtime.bucket": "CPU Bucket",
+  "runtime.live": "实时采样 · 最近 15 分钟",
+  "runtime.clear": "清空历史",
 } as const;
 
 export type TranslationKey = keyof typeof zh;
@@ -802,6 +807,11 @@ const en: Record<TranslationKey, string> = {
   "trends.energyConstruction": "Construction",
   "trends.creepsProduced": "Creeps Produced",
   "trends.empty": "No stats data.",
+  "runtime.title": "CPU / Bucket Monitor",
+  "runtime.cpu": "CPU Usage",
+  "runtime.bucket": "CPU Bucket",
+  "runtime.live": "Live samples · Last 15 minutes",
+  "runtime.clear": "Clear history",
 };
 
 export const messages: Record<Locale, Record<TranslationKey, string>> = {

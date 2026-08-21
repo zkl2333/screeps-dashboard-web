@@ -34,6 +34,7 @@ import { useSettingsStore } from "../stores/settings-store";
 import { MetricCell } from "./metric-cell";
 import { MetricBar } from "./metric-bar";
 import { CircularProgress } from "./circular-progress";
+import { RuntimeMonitorPanel } from "./runtime-monitor-panel";
 import { StatsTrendPanel } from "./stats-trend-panel";
 import { TerrainThumbnail } from "./terrain-thumbnail";
 
@@ -837,6 +838,14 @@ function DashboardPanelContent({ onInitialLoadStateChange, session }: DashboardP
           </article>
 
           {!isPublicProfileView ? <StatsTrendPanel /> : null}
+          {!isPublicProfileView ? (
+            <RuntimeMonitorPanel
+              key={`${session.baseUrl}|${session.username}|${externalTargetUsername ?? ""}`}
+              cpuBucket={runtimeMetrics.cpuBucket ?? profile?.cpuBucket}
+              cpuLimit={cpuLimit}
+              cpuUsed={cpuUsed}
+            />
+          ) : null}
 
           {groupedRooms.length ? (
             <>
