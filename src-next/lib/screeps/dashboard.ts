@@ -2692,9 +2692,6 @@ export async function fetchDashboardSnapshot(
   if (profile.cpuUsed === undefined && profile.cpuLimit !== undefined) {
     profile.cpuUsed = 0;
   }
-  if (profile.cpuBucket === undefined) {
-    profile.cpuBucket = 0;
-  }
   if (profile.memLimit === undefined) {
     profile.memLimit = DEFAULT_MEMORY_LIMIT_KB;
   }
