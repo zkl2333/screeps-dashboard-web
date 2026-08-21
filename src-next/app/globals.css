@@ -878,7 +878,7 @@ a {
 
 .nav-public-search-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
 }
 
@@ -920,7 +920,7 @@ a {
 .settings-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
@@ -1027,7 +1027,7 @@ a {
   margin-top: 10px;
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .card {
@@ -1102,7 +1102,7 @@ a {
   min-width: 0;
   width: min(100%, 236px);
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   justify-items: end;
   align-items: start;
@@ -1237,7 +1237,7 @@ a {
 .profile-growth-bars {
   display: none;
   width: 100%;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -1419,7 +1419,7 @@ a {
   margin-top: 8px;
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .resource-grid {
@@ -2533,15 +2533,15 @@ a {
 
 @media (max-width: 760px) {
   .rr-grid-4 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .rr-col-6 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .rr-col-5 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .rr-column-title {
@@ -3452,7 +3452,7 @@ a {
 .market-order-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .market-order-section {
@@ -3530,7 +3530,7 @@ a {
 .market-dialog-grid {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .market-metric-grid {
@@ -3982,7 +3982,7 @@ a {
 
 .market-v2-orders-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   gap: 10px;
   align-items: start;
@@ -4052,7 +4052,7 @@ a {
 
 @media (max-width: 1120px) {
   .resource-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .room-thumb-grid {
@@ -4065,7 +4065,7 @@ a {
   }
 
   .room-layer-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .market-order-grid {
@@ -4526,7 +4526,7 @@ a {
     width: 100%;
     max-width: 100%;
     margin-left: 0;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
     justify-items: center;
   }
@@ -4691,11 +4691,11 @@ a {
   }
 
   .market-v2-resource-grid[data-cols="5"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .market-v2-resource-grid[data-cols="4"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .market-v2-orders-grid {
@@ -4813,7 +4813,7 @@ a {
 
 @media (max-width: 520px) {
   .app-nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .nav-public-search {
@@ -4956,7 +4956,7 @@ a {
   }
 
   .market-v2-feature-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
 
@@ -4964,7 +4964,7 @@ a {
   .market-v2-resource-grid[data-cols="6"],
   .market-v2-resource-grid[data-cols="5"],
   .market-v2-resource-grid[data-cols="4"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .market-v2-orders-grid {
@@ -5056,7 +5056,7 @@ a {
 .trend-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .trend-chart {
@@ -5253,7 +5253,7 @@ a {
 .runtime-monitor-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .runtime-chart {
@@ -5312,10 +5312,4 @@ a {
   display: grid;
   place-items: center;
   margin: 0;
-}
-
-@media (max-width: 720px) {
-  .runtime-monitor-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }

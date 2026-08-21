@@ -181,12 +181,8 @@ function buildRuntimeChannels(
     "cpu",
     "memory",
     "stats",
-    "cpubucket",
-    "bucket",
     "user/cpu",
     "user/memory",
-    "user/cpubucket",
-    "user/bucket",
     "user/stats",
   ]);
 
@@ -208,13 +204,9 @@ function buildRuntimeChannels(
   for (const identity of identityCandidates) {
     channels.add(`user:${identity}/cpu`);
     channels.add(`user:${identity}/memory`);
-    channels.add(`user:${identity}/cpubucket`);
-    channels.add(`user:${identity}/bucket`);
     channels.add(`user:${identity}/stats`);
     channels.add(`user/${identity}/cpu`);
     channels.add(`user/${identity}/memory`);
-    channels.add(`user/${identity}/cpubucket`);
-    channels.add(`user/${identity}/bucket`);
     channels.add(`user/${identity}/stats`);
   }
 
@@ -841,7 +833,6 @@ function DashboardPanelContent({ onInitialLoadStateChange, session }: DashboardP
           {!isPublicProfileView ? (
             <RuntimeMonitorPanel
               key={`${session.baseUrl}|${session.username}|${externalTargetUsername ?? ""}`}
-              cpuBucket={runtimeMetrics.cpuBucket ?? profile?.cpuBucket}
               cpuLimit={cpuLimit}
               cpuUsed={cpuUsed}
             />

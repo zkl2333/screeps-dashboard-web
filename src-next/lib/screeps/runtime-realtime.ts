@@ -97,10 +97,6 @@ function isRuntimeChannel(channel: string): boolean {
   );
 }
 
-function normalizeMetricKey(key: string): string {
-  return key.replace(/[^a-z0-9]/gi, "").toLowerCase();
-}
-
 function compactRecords(records: Array<Record<string, unknown> | null>): Record<string, unknown>[] {
   const output: Record<string, unknown>[] = [];
   for (const record of records) {
@@ -115,13 +111,9 @@ function pickFromScopes(
   scopes: Record<string, unknown>[],
   keys: readonly string[]
 ): number | undefined {
-  const normalizedKeys = new Set(keys.map(normalizeMetricKey));
   for (const scope of scopes) {
-    for (const [key, value] of Object.entries(scope)) {
-      if (!normalizedKeys.has(normalizeMetricKey(key))) {
-        continue;
-      }
-      const parsed = asNumber(value);
+    for (const key of keys) {
+      const parsed = asNumber(scope[key]);
       if (parsed !== undefined) {
         return parsed;
       }
@@ -135,13 +127,7 @@ function pickFromNestedScopes(
   nestedKey: string,
   keys: readonly string[]
 ): number | undefined {
-  const normalizedNestedKey = normalizeMetricKey(nestedKey);
-  const nestedScopes = compactRecords(
-    scopes.map((scope) => {
-      const entry = Object.entries(scope).find(([key]) => normalizeMetricKey(key) === normalizedNestedKey);
-      return asRecord(entry?.[1]);
-    })
-  );
+  const nestedScopes = compactRecords(scopes.map((scope) => asRecord(scope[nestedKey])));
   return pickFromScopes(nestedScopes, keys);
 }
 
@@ -154,9 +140,6 @@ export function extractRuntimeMetricsPatch(payload: unknown): RuntimeMetricsPatc
     asRecord(root.message),
     asRecord(root.payload),
     asRecord(root.runtime),
-    ...(Array.isArray(payload) ? payload.map(asRecord) : []),
-    ...(Array.isArray(root.data) ? root.data.map(asRecord) : []),
-    ...(Array.isArray(root.payload) ? root.payload.map(asRecord) : []),
   ]);
 
   const cpuUsed =
@@ -207,18 +190,11 @@ export function extractRuntimeMetricsPatch(payload: unknown): RuntimeMetricsPatc
   return Object.keys(patch).length > 0 ? patch : null;
 }
 
-function extractMetricFromText(value: string, names: readonly string[]): number | undefined {
-  const namePattern = names.join("|");
-  const match = new RegExp("(?:" + namePattern + ")\\s*[=:]\\s*(-?\\d+(?:\\.\\d+)?)", "i").exec(value);
-  return match ? asNumber(match[1]) : undefined;
-}
-
 export function extractRuntimeMetricsFromEvent(
   event: ScreepsRealtimeEvent
 ): RuntimeMetricsPatch | null {
   const normalizedChannel = event.channel.trim().toLowerCase();
   const scalar = asNumber(event.payload);
-  const textPayload = typeof event.payload === "string" ? event.payload : undefined;
 
   if (scalar !== undefined) {
     if (normalizedChannel.includes("cpubucket") || normalizedChannel.includes("bucket")) {
@@ -236,13 +212,6 @@ export function extractRuntimeMetricsFromEvent(
     }
     if (normalizedChannel.includes("cpu")) {
       return { cpuUsed: scalar };
-    }
-  }
-
-  if (textPayload) {
-    const bucket = extractMetricFromText(textPayload, ["cpubucket", "cpu_bucket", "bucket"]);
-    if (bucket !== undefined) {
-      return { cpuBucket: bucket };
     }
   }
 

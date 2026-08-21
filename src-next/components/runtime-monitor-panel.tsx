@@ -11,7 +11,6 @@ import {
 } from "../lib/screeps/runtime-history";
 
 interface RuntimeMonitorPanelProps {
-  cpuBucket?: number;
   cpuLimit?: number;
   cpuUsed?: number;
 }
@@ -19,8 +18,6 @@ interface RuntimeMonitorPanelProps {
 interface MetricChartProps {
   color: string;
   label: string;
-  maxValue?: number;
-  minValue?: number;
   points: RuntimeHistoryPoint[];
   value: number | undefined;
   valueFormatter: (value: number | undefined) => string;
@@ -40,37 +37,20 @@ function formatCpu(value: number | undefined): string {
   });
 }
 
-function formatBucket(value: number | undefined): string {
-  if (value === undefined) {
-    return "N/A";
-  }
-  return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-
-function buildChartGeometry(
-  points: RuntimeHistoryPoint[],
-  minValue?: number,
-  maxValue?: number
-) {
+function buildChartGeometry(points: RuntimeHistoryPoint[]) {
   if (points.length === 0) {
     return undefined;
   }
 
-  let min = minValue ?? Math.min(...points.map((point) => point.value));
-  let max = maxValue ?? Math.max(...points.map((point) => point.value));
+  let min = Math.min(...points.map((point) => point.value));
+  let max = Math.max(...points.map((point) => point.value));
   if (!Number.isFinite(min) || !Number.isFinite(max)) {
     return undefined;
   }
 
-  if (minValue === undefined || maxValue === undefined) {
-    const range = Math.max(max - min, 1);
-    if (minValue === undefined) {
-      min = Math.max(0, min - range * 0.1);
-    }
-    if (maxValue === undefined) {
-      max += range * 0.1;
-    }
-  }
+  const range = Math.max(max - min, 1);
+  min = Math.max(0, min - range * 0.1);
+  max += range * 0.1;
   if (max <= min) {
     max = min + 1;
   }
@@ -93,17 +73,9 @@ function buildChartGeometry(
   return { areaPath, linePath, max, min };
 }
 
-function MetricChart({
-  color,
-  label,
-  maxValue,
-  minValue,
-  points,
-  value,
-  valueFormatter,
-}: MetricChartProps) {
-  const geometry = buildChartGeometry(points, minValue, maxValue);
-  const gradientId = `runtime-fill-${label.replace(/[^a-z0-9]/gi, "-").toLowerCase()}`;
+function MetricChart({ color, label, points, value, valueFormatter }: MetricChartProps) {
+  const geometry = buildChartGeometry(points);
+  const gradientId = "runtime-fill-cpu";
 
   return (
     <div className="runtime-chart">
@@ -151,27 +123,23 @@ function MetricChart({
   );
 }
 
-const EMPTY_SNAPSHOT: RuntimeHistorySnapshot = { cpu: [], bucket: [] };
+const EMPTY_SNAPSHOT: RuntimeHistorySnapshot = { cpu: [] };
 
-export function RuntimeMonitorPanel({
-  cpuBucket,
-  cpuLimit,
-  cpuUsed,
-}: RuntimeMonitorPanelProps) {
+export function RuntimeMonitorPanel({ cpuLimit, cpuUsed }: RuntimeMonitorPanelProps) {
   const { t } = useI18n();
-  const latestValuesRef = useRef({ cpu: cpuUsed, bucket: cpuBucket });
+  const latestCpuRef = useRef(cpuUsed);
   const historyRef = useRef<RuntimeHistorySnapshot>(EMPTY_SNAPSHOT);
   const [history, setHistory] = useState<RuntimeHistorySnapshot>(EMPTY_SNAPSHOT);
 
   useEffect(() => {
-    latestValuesRef.current = { cpu: cpuUsed, bucket: cpuBucket };
-  }, [cpuBucket, cpuUsed]);
+    latestCpuRef.current = cpuUsed;
+  }, [cpuUsed]);
 
   useEffect(() => {
     const sample = () => {
       const next = appendRuntimeHistory(
         historyRef.current,
-        latestValuesRef.current,
+        latestCpuRef.current,
         Date.now(),
         RUNTIME_HISTORY_MAX_POINTS
       );
@@ -185,8 +153,8 @@ export function RuntimeMonitorPanel({
   }, []);
 
   function clearHistory() {
-    historyRef.current = { cpu: [], bucket: [] };
-    setHistory({ cpu: [], bucket: [] });
+    historyRef.current = EMPTY_SNAPSHOT;
+    setHistory(EMPTY_SNAPSHOT);
   }
 
   return (
@@ -211,15 +179,6 @@ export function RuntimeMonitorPanel({
               ? formatCpu(value)
               : `${formatCpu(value)} / ${formatCpu(cpuLimit)}`
           }
-        />
-        <MetricChart
-          color="#e6bd5b"
-          label={t("runtime.bucket")}
-          maxValue={10_000}
-          minValue={0}
-          points={history.bucket}
-          value={cpuBucket}
-          valueFormatter={formatBucket}
         />
       </div>
     </article>

@@ -8,12 +8,6 @@ export interface RuntimeHistoryPoint {
 
 export interface RuntimeHistorySnapshot {
   cpu: RuntimeHistoryPoint[];
-  bucket: RuntimeHistoryPoint[];
-}
-
-export interface RuntimeHistoryValues {
-  cpu?: number;
-  bucket?: number;
 }
 
 function isFiniteMetric(value: number | undefined): value is number {
@@ -38,21 +32,15 @@ function appendPoint(
 
 export function appendRuntimeHistory(
   snapshot: RuntimeHistorySnapshot,
-  values: RuntimeHistoryValues,
+  cpu: number | undefined,
   time: number,
   maxPoints = RUNTIME_HISTORY_MAX_POINTS
 ): RuntimeHistorySnapshot {
-  const next: RuntimeHistorySnapshot = {
-    cpu: snapshot.cpu,
-    bucket: snapshot.bucket,
+  if (!isFiniteMetric(cpu)) {
+    return snapshot;
+  }
+
+  return {
+    cpu: appendPoint(snapshot.cpu, { time, value: cpu }, maxPoints),
   };
-
-  if (isFiniteMetric(values.cpu)) {
-    next.cpu = appendPoint(snapshot.cpu, { time, value: values.cpu }, maxPoints);
-  }
-  if (isFiniteMetric(values.bucket)) {
-    next.bucket = appendPoint(snapshot.bucket, { time, value: values.bucket }, maxPoints);
-  }
-
-  return next;
 }
