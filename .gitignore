@@ -26,3 +26,7 @@ dist
 out
 .*/
 !.github/
+
+.env
+.env.*
+!.env.example

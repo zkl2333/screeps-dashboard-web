@@ -11,6 +11,10 @@ export default function nextConfig(phase: string): NextConfig {
           async rewrites() {
             return [
               {
+                source: "/api/auth/:path*",
+                destination: "http://127.0.0.1:3000/api/auth/:path*",
+              },
+              {
                 source: "/api/screeps-proxy",
                 destination: "http://127.0.0.1:3000/api/screeps-proxy",
               },

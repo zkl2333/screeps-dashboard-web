@@ -42,6 +42,8 @@ services:
 
 只填写可信的 `http(s)` origin，不包含 API path。不要将服务端口直接暴露到不可信公网，外部访问应使用 HTTPS 和反向代理认证。
 
+管理员密码通过 `DASHBOARD_ADMIN_PASSWORD` 配置。
+
 ## 运行模式
 
 ```text

@@ -120,6 +120,7 @@ async function browserRequest(request: ScreepsRequest): Promise<ScreepsResponse>
   try {
     const response = await fetch("/api/screeps-proxy", {
       method: "POST",
+      credentials: "same-origin",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
       body: JSON.stringify(request),
       signal: controller.signal,

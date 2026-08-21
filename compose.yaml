@@ -6,6 +6,7 @@ services:
       - "3200:3000"
     environment:
       SCREEPS_ALLOWED_ORIGINS: https://screeps.com
+      DASHBOARD_ADMIN_PASSWORD: ${DASHBOARD_ADMIN_PASSWORD}
     read_only: true
     tmpfs:
       - /tmp

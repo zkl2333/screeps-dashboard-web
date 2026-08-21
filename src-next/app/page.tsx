@@ -2,27 +2,32 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthHydration } from "../components/auth-guard";
 import { RouteTransition } from "../components/route-transition";
 import { useI18n } from "../lib/i18n/use-i18n";
-import { useAuthStore } from "../stores/auth-store";
+import { useAdminAuthStore } from "../stores/admin-auth-store";
 
 export default function HomePage() {
   const router = useRouter();
-  const session = useAuthStore((state) => state.session);
-  const hasHydrated = useAuthHydration();
   const { t } = useI18n();
+  const setAuthenticated = useAdminAuthStore((state) => state.setAuthenticated);
 
   useEffect(() => {
-    if (!hasHydrated) {
-      return;
-    }
-
     void router.prefetch("/user");
     void router.prefetch("/rooms");
     void router.prefetch("/login");
-    router.replace(session ? (session.token.trim() ? "/user" : "/rooms") : "/login");
-  }, [hasHydrated, router, session]);
+    void fetch("/api/auth/session", {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    })
+      .then((response) => {
+        setAuthenticated(response.ok);
+        router.replace(response.ok ? "/user" : "/login");
+      })
+      .catch(() => {
+        setAuthenticated(false);
+        router.replace("/login");
+      });
+  }, [router, setAuthenticated]);
 
   return (
     <main className="page-center">

@@ -4,6 +4,7 @@ A Docker-only Web distribution based on the full ScreepsDashboard feature set. T
 
 ## Features
 
+- Administrator password gate for internal APIs
 - Account, token, and guest login
 - Multiple server profiles and private-server support
 - User, resources, rooms, map, rankings, and market views
@@ -16,14 +17,20 @@ A Docker-only Web distribution based on the full ScreepsDashboard feature set. T
 
 ```bash
 pnpm install
+```
+
+Set `DASHBOARD_ADMIN_PASSWORD` in the shell, then run:
+
+```bash
 pnpm run dev
 ```
 
 The development UI is available at <http://localhost:3001>; its proxied health endpoint is <http://localhost:3001/healthz>.
 
-For production:
+For production, create a `.env` file from `.env.example`, set the administrator password, and start the container:
 
 ```bash
+cp .env.example .env
 docker compose up -d --build
 ```
 
@@ -38,6 +45,7 @@ services:
   dashboard:
     environment:
       SCREEPS_ALLOWED_ORIGINS: https://screeps.com,https://screeps.example.com
+      DASHBOARD_ADMIN_PASSWORD: ${DASHBOARD_ADMIN_PASSWORD}
 ```
 
 Only use trusted `http(s)` origins without an API path. Put HTTPS and reverse-proxy authentication in front of any public deployment.
@@ -48,7 +56,7 @@ Only use trusted `http(s)` origins without an API path. Put HTTPS and reverse-pr
 Browser -> Node static server / same-origin API proxy -> Screeps official or private server
 ```
 
-Credentials are currently managed by the browser session. A server-side session and Docker secret mode can be added later without changing the Docker-only direction.
+The administrator session is stored in memory and is cleared when the Node process restarts. Screeps credentials are still managed by the browser in this version.
 
 ## Checks
 

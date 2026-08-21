@@ -2,6 +2,7 @@ import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {extname, resolve} from 'node:path';
 import {createProxyHandler} from './proxy.mjs';
+import {createAuthHandler} from './auth.mjs';
 import {resolveStaticFile} from './static-files.mjs';
 
 const port = Number(process.env.PORT || 3000);
@@ -11,6 +12,10 @@ const maxRequestBytes = Number(process.env.MAX_REQUEST_BYTES || 1_048_576);
 const allowedOrigins = (process.env.SCREEPS_ALLOWED_ORIGINS || 'https://screeps.com')
   .split(',').map(value => value.trim()).filter(Boolean);
 const proxy = createProxyHandler({allowedOrigins, maxRequestBytes});
+const auth = createAuthHandler({
+  adminPassword: process.env.DASHBOARD_ADMIN_PASSWORD || '',
+  secureCookie: process.env.DASHBOARD_COOKIE_SECURE === '1',
+});
 const contentTypes = {
   '.html': 'text/html; charset=utf-8', '.txt': 'text/x-component; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -78,8 +83,20 @@ const server = createServer(async (request, response) => {
       response.end('{"ok":true}');
       return;
     }
+    if (url.pathname.startsWith('/api/auth/')) {
+      await sendWebResponse(response, await auth.handle(await nodeRequestToWeb(request)));
+      return;
+    }
     if (url.pathname === '/api/screeps-proxy') {
-      await sendWebResponse(response, await proxy(await nodeRequestToWeb(request)));
+      const webRequest = await nodeRequestToWeb(request);
+      if (!auth.requireSession(webRequest)) {
+        await sendWebResponse(response, new Response(JSON.stringify({error: 'Authentication required'}), {
+          status: 401,
+          headers: {'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store'},
+        }));
+        return;
+      }
+      await sendWebResponse(response, await proxy(webRequest));
       return;
     }
     if (!['GET', 'HEAD'].includes(request.method || 'GET')) {

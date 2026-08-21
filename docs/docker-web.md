@@ -18,6 +18,8 @@ curl http://localhost:3200/healthz
 
 默认只允许 `https://screeps.com`。私服必须显式加入 `SCREEPS_ALLOWED_ORIGINS`，多个 origin 用逗号分隔。只填写可信的 `http(s)` origin，不包含 API path。
 
+管理员密码通过 `DASHBOARD_ADMIN_PASSWORD` 配置。未登录时无法访问内部 API。
+
 ## 安全建议
 
 - 使用 HTTPS 和反向代理认证。
