@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
-  type WheelEvent as ReactWheelEvent,
 } from "react";
 import { SCREEPS_RENDERER_RESOURCE_MAP } from "../lib/screeps/renderer-resource-map";
 import type {
@@ -1759,8 +1758,10 @@ export function RoomGameplayMap({
     centerView(getFitZoomForRenderer(rendererRef.current));
   }, [centerView, getFitZoomForRenderer]);
 
+  // React 的根容器 wheel 监听是 passive 的，preventDefault 会告警且无效，
+  // 因此用原生监听显式注册为非 passive。
   const handleWheel = useCallback(
-    (event: ReactWheelEvent<HTMLDivElement>) => {
+    (event: WheelEvent) => {
       if (!isReady) {
         return;
       }
@@ -1780,6 +1781,17 @@ export function RoomGameplayMap({
     },
     [applyZoom, isReady, zoom]
   );
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) {
+      return undefined;
+    }
+    viewport.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      viewport.removeEventListener("wheel", handleWheel);
+    };
+  }, [handleWheel]);
 
   const handlePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -1862,7 +1874,6 @@ export function RoomGameplayMap({
       <div
         ref={viewportRef}
         className={`room-game-map-viewport room-game-map-viewport-official${isDragging ? " is-dragging" : ""}`}
-        onWheel={handleWheel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={endDrag}
