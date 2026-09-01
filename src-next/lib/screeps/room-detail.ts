@@ -1619,13 +1619,10 @@ async function tryUserRooms(session: ScreepsSession): Promise<unknown> {
 
   try {
     const response = await screepsRequest({
-      baseUrl: session.baseUrl,
       endpoint: session.endpointMap.rooms.endpoint,
       method: session.endpointMap.rooms.method,
       query: session.endpointMap.rooms.query,
       body: session.endpointMap.rooms.body,
-      token: session.token,
-      username: session.username,
     });
     return response.ok ? response.data : undefined;
   } catch {

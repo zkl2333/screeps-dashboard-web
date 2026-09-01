@@ -495,7 +495,6 @@ function toErrorText(error: unknown): string {
 }
 
 async function sendConsoleCommandByRequest(
-  session: ScreepsSession,
   code: string,
   shardInput?: string
 ): Promise<string | undefined> {
@@ -516,13 +515,10 @@ async function sendConsoleCommandByRequest(
     let response: ScreepsResponse;
     try {
       response = await screepsRequest({
-        baseUrl: session.baseUrl,
         endpoint: "/api/user/console",
         method: "POST",
         body: candidate.body,
         query: candidate.query,
-        token: session.token,
-        username: session.username,
       });
     } catch (error) {
       failures.push(toErrorText(error));
@@ -937,7 +933,7 @@ export function normalizeConsoleStreamEvents(
 }
 
 export async function sendConsoleCommand(
-  session: ScreepsSession,
+  _session: ScreepsSession,
   code: string,
   shardInput?: string
 ): Promise<ConsoleExecutionResult> {
@@ -945,6 +941,6 @@ export async function sendConsoleCommand(
   if (!trimmedCode) {
     throw new Error("Console command cannot be empty.");
   }
-  const feedback = await sendConsoleCommandByRequest(session, trimmedCode, shardInput);
+  const feedback = await sendConsoleCommandByRequest(trimmedCode, shardInput);
   return { feedback, raw: trimmedCode, executedAt: new Date().toISOString() };
 }

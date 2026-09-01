@@ -5,7 +5,7 @@ export type QueryValue = string | number | boolean;
 export type QueryParams = Record<string, QueryValue>;
 
 export interface ScreepsRequest {
-  baseUrl: string;
+  baseUrl?: string;
   endpoint: string;
   method?: ScreepsMethod;
   token?: string | null;

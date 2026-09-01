@@ -217,15 +217,13 @@ export function RoomDetailPanel({ roomName, roomShard }: RoomDetailPanelProps) {
   const [roomInput, setRoomInput] = useState(normalizedName);
   const [shardInput, setShardInput] = useState(normalizedShard ?? "");
   const [liveSnapshot, setLiveSnapshot] = useState<RoomDetailSnapshot | undefined>(undefined);
-  const isAuthenticatedSession = Boolean(session?.token.trim());
-
   const {
     data: dashboardData,
     error: ownedRoomsError,
     isLoading: ownedRoomsLoading,
   } = useSWR(
-    session && isAuthenticatedSession
-      ? ["dashboard", session.baseUrl, session.token, session.verifiedAt, ""]
+    session
+      ? ["dashboard", session.baseUrl, session.verifiedAt, ""]
       : null,
     () => {
       if (!session) {
@@ -259,7 +257,7 @@ export function RoomDetailPanel({ roomName, roomShard }: RoomDetailPanelProps) {
 
   const swrKey =
     session && normalizedName
-      ? ["room-detail", session.baseUrl, session.token, normalizedName, normalizedShard ?? ""]
+      ? ["room-detail", session.baseUrl, normalizedName, normalizedShard ?? ""]
       : null;
 
   const { data, error, isLoading, mutate } = useSWR(
@@ -286,7 +284,7 @@ export function RoomDetailPanel({ roomName, roomShard }: RoomDetailPanelProps) {
   useEffect(() => {
     setLiveSnapshot(undefined);
     lastRealtimeMutateAt.current = 0;
-  }, [normalizedName, normalizedShard, session?.baseUrl, session?.token]);
+  }, [normalizedName, normalizedShard, session?.baseUrl]);
 
   useEffect(() => {
     if (!data) {
@@ -301,8 +299,6 @@ export function RoomDetailPanel({ roomName, roomShard }: RoomDetailPanelProps) {
     }
 
     const realtimeClient = new ScreepsRealtimeClient({
-      baseUrl: session.baseUrl,
-      token: session.token,
       reconnect: true,
       reconnectBaseMs: 1_200,
       reconnectMaxMs: 20_000,
@@ -433,7 +429,7 @@ export function RoomDetailPanel({ roomName, roomShard }: RoomDetailPanelProps) {
     >
       <header className="dashboard-header">
         <form className="room-detail-nav-form" onSubmit={handleNavigateRoom}>
-          {isAuthenticatedSession ? (
+          {session ? (
             <select
               className="room-detail-nav-input room-detail-nav-owned"
               value={selectedOwnedRoomKey}

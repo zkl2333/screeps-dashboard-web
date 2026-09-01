@@ -400,7 +400,7 @@ function MarketPanelContent({ session }: MarketPanelContentProps) {
     isValidating: catalogValidating,
     mutate: mutateCatalog,
   } = useSWR(
-    ["market-catalog", activeSession.baseUrl, activeSession.token, activeSession.verifiedAt],
+    ["market-catalog", activeSession.baseUrl, activeSession.verifiedAt],
     () => fetchMarketResourceCatalog(activeSession),
     {
       refreshInterval: refreshIntervalMs,
@@ -411,7 +411,7 @@ function MarketPanelContent({ session }: MarketPanelContentProps) {
   );
 
   const { data: dashboardData, isValidating: dashboardValidating, mutate: mutateDashboard } = useSWR(
-    ["market-dashboard-shards", activeSession.baseUrl, activeSession.token, activeSession.verifiedAt],
+    ["market-dashboard-shards", activeSession.baseUrl, activeSession.verifiedAt],
     () => fetchDashboardSnapshot(activeSession),
     {
       refreshInterval: refreshIntervalMs,

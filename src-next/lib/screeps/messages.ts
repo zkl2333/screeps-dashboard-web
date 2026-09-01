@@ -92,10 +92,8 @@ function requireSuccess(response: ScreepsResponse, label: string): unknown {
 
 async function fetchAuthProfile(session: ScreepsSession): Promise<{ id: string; username: string }> {
   const response = await screepsRequest({
-    baseUrl: session.baseUrl,
     endpoint: "/api/auth/me",
     method: "GET",
-    token: session.token,
   });
   const payload = asRecord(requireSuccess(response, "Auth profile"));
   const id = asString(payload?._id ?? payload?.id);
@@ -104,29 +102,22 @@ async function fetchAuthProfile(session: ScreepsSession): Promise<{ id: string; 
   return { id, username };
 }
 
-async function fetchMessagesIndex(session: ScreepsSession, limit: number): Promise<MessagesIndexPayload> {
+async function fetchMessagesIndex(limit: number): Promise<MessagesIndexPayload> {
   const response = await screepsRequest({
-    baseUrl: session.baseUrl,
     endpoint: "/api/user/messages/index",
     method: "GET",
-    token: session.token,
-    username: session.username,
     query: { limit },
   });
   return asRecord(requireSuccess(response, "Messages index")) as MessagesIndexPayload;
 }
 
 async function fetchMessagesList(
-  session: ScreepsSession,
   peerId: string,
   count: number
 ): Promise<RawMessage[]> {
   const response = await screepsRequest({
-    baseUrl: session.baseUrl,
     endpoint: "/api/user/messages/list",
     method: "GET",
-    token: session.token,
-    username: session.username,
     query: { respondent: peerId, count, offset: 0 },
   });
   const payload = asRecord(requireSuccess(response, "Messages list"));
@@ -210,10 +201,9 @@ export async function fetchProcessedMessages(
   session: ScreepsSession,
   options?: { maxConversations?: number }
 ): Promise<ProcessedConversationMap> {
-  if (!session.token.trim()) throw new Error("Token cannot be empty.");
   const maxConversations = Math.max(1, Math.min(MAX_CONVERSATIONS_LIMIT, Math.floor(options?.maxConversations ?? DEFAULT_MAX_CONVERSATIONS)));
   const profile = await fetchAuthProfile(session);
-  const payload = await fetchMessagesIndex(session, maxConversations);
+  const payload = await fetchMessagesIndex(maxConversations);
   const output: ProcessedConversationMap = {};
   for (const head of conversationHeads(payload, session.baseUrl, maxConversations)) {
     const message = toConversationMessage(head.latest, profile.id, profile.username, head.peerId, head.peerUsername);
@@ -233,11 +223,10 @@ export async function fetchConversationThread(
   input: { peerId: string; peerUsername?: string; peerAvatarUrl?: string; peerHasBadge?: boolean; limit?: number }
 ): Promise<ProcessedConversation> {
   const peerId = input.peerId.trim();
-  if (!session.token.trim()) throw new Error("Token cannot be empty.");
   if (!peerId) throw new Error("Peer id is required.");
   const limit = Math.max(1, Math.min(MAX_PER_CONVERSATION_LIMIT, Math.floor(input.limit ?? DEFAULT_PER_CONVERSATION_LIMIT)));
   const profile = await fetchAuthProfile(session);
-  const messages = await fetchMessagesList(session, peerId, limit);
+  const messages = await fetchMessagesList(peerId, limit);
   const peerUsername = input.peerUsername?.trim() || peerId;
   const seen = new Set<string>();
   const output = messages
@@ -254,19 +243,15 @@ export async function fetchConversationThread(
   };
 }
 
-export async function sendMessage(session: ScreepsSession, input: SendMessageInput): Promise<string | undefined> {
+export async function sendMessage(_session: ScreepsSession, input: SendMessageInput): Promise<string | undefined> {
   const respondent = input.to.trim();
   const subject = (input.subject ?? "").trim();
   const text = input.text.trim();
-  if (!session.token.trim()) throw new Error("Token cannot be empty.");
   if (!respondent) throw new Error("Message recipient is required.");
   if (!text) throw new Error("Message body cannot be empty.");
   const response = await screepsRequest({
-    baseUrl: session.baseUrl,
     endpoint: "/api/user/messages/send",
     method: "POST",
-    token: session.token,
-    username: session.username,
     body: { respondent, subject, text },
   });
   requireSuccess(response, "Messages send");

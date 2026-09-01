@@ -30,3 +30,5 @@ out
 .env
 .env.*
 !.env.example
+secrets/
+config/dashboard.json

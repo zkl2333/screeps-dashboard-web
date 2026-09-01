@@ -1822,12 +1822,9 @@ async function hydrateRoomLevelsFromMapStats(
 
       const responses = await screepsBatchRequest(
         requestBodies.map((body) => ({
-          baseUrl: session.baseUrl,
           endpoint: "/api/game/map-stats",
           method: "POST",
           body,
-          token: session.token,
-          username: session.username,
         })),
         { maxConcurrency: Math.min(3, requestBodies.length) }
       );
@@ -1956,7 +1953,6 @@ function hasUsefulRoomsPayload(payload: unknown): boolean {
 }
 
 async function tryFallbackPayload(
-  session: ScreepsSession,
   candidates: DashboardFallbackEndpoint[],
   selected?: { endpoint: string; method?: ScreepsMethod; query?: QueryParams; body?: unknown },
   validator?: (payload: unknown) => boolean
@@ -1977,13 +1973,10 @@ async function tryFallbackPayload(
 
   const responses = await screepsBatchRequest(
     filteredCandidates.map((candidate) => ({
-      baseUrl: session.baseUrl,
       endpoint: candidate.endpoint,
       method: candidate.method,
       query: candidate.query,
       body: candidate.body,
-      token: session.token,
-      username: session.username,
     })),
     { maxConcurrency: Math.min(6, filteredCandidates.length) }
   );
@@ -2471,7 +2464,6 @@ async function fetchDashboardSnapshotForTargetUser(
   const normalizedTarget = targetUsername.trim();
   const targetLower = normalizedTarget.toLowerCase();
   const profilePayload = await tryFallbackPayload(
-    session,
     buildPublicProfileLookupEndpoints(normalizedTarget),
     undefined,
     (payload) => {
@@ -2489,14 +2481,12 @@ async function fetchDashboardSnapshotForTargetUser(
 
   const profileUserId = extractProfileUserId(profilePayload);
   const safeStatsPayload = await tryFallbackPayload(
-    session,
     buildPublicStatsFallbackEndpoints(normalizedTarget, profileUserId),
     undefined,
     hasUsefulStatsPayload
   );
 
   let safeRoomsPayload = await tryFallbackPayload(
-    session,
     buildPublicRoomsFallbackEndpoints(normalizedTarget, profileUserId),
     undefined,
     hasUsefulRoomsPayload
@@ -2549,37 +2539,28 @@ export async function fetchDashboardSnapshot(
 
   const requestBatch: ScreepsRequest[] = [
     {
-      baseUrl: session.baseUrl,
       endpoint: session.endpointMap.profile.endpoint,
       method: session.endpointMap.profile.method,
       query: session.endpointMap.profile.query,
       body: session.endpointMap.profile.body,
-      token: session.token,
-      username: session.username,
     },
   ];
 
   const roomsRequestIndex = session.endpointMap.rooms
     ? requestBatch.push({
-        baseUrl: session.baseUrl,
         endpoint: session.endpointMap.rooms.endpoint,
         method: session.endpointMap.rooms.method,
         query: session.endpointMap.rooms.query,
         body: session.endpointMap.rooms.body,
-        token: session.token,
-        username: session.username,
       }) - 1
     : -1;
 
   const statsRequestIndex = session.endpointMap.stats
     ? requestBatch.push({
-        baseUrl: session.baseUrl,
         endpoint: session.endpointMap.stats.endpoint,
         method: session.endpointMap.stats.method,
         query: session.endpointMap.stats.query,
         body: session.endpointMap.stats.body,
-        token: session.token,
-        username: session.username,
       }) - 1
     : -1;
 
@@ -2609,13 +2590,10 @@ export async function fetchDashboardSnapshot(
     if (profileFallbackCandidates.length > 0) {
       const fallbackResponses = await screepsBatchRequest(
         profileFallbackCandidates.map((candidate) => ({
-          baseUrl: session.baseUrl,
           endpoint: candidate.endpoint,
           method: candidate.method,
           query: candidate.query,
           body: candidate.body,
-          token: session.token,
-          username: session.username,
         })),
         { maxConcurrency: profileFallbackCandidates.length }
       );
@@ -2643,7 +2621,6 @@ export async function fetchDashboardSnapshot(
   const profileHasStatsSignals = hasUsefulStatsPayload(safeProfileResponse.data);
   if (!hasUsefulStatsPayload(safeStatsPayload) && !profileHasStatsSignals) {
     const fallbackStatsPayload = await tryFallbackPayload(
-      session,
       STATS_FALLBACK_ENDPOINTS,
       session.endpointMap.stats,
       hasUsefulStatsPayload
@@ -2660,12 +2637,9 @@ export async function fetchDashboardSnapshot(
     const [roomsWithId] = await screepsBatchRequest(
       [
         {
-          baseUrl: session.baseUrl,
           endpoint: "/api/user/rooms",
           method: "GET",
           query: { id: profileUserId },
-          token: session.token,
-          username: session.username,
         },
       ],
       { maxConcurrency: 1 }
@@ -2677,7 +2651,6 @@ export async function fetchDashboardSnapshot(
 
   if (shouldFetchRoomsFallback && !hasUsefulRoomsPayload(safeRoomsPayload) && !profileHasRooms) {
     const fallbackRoomsPayload = await tryFallbackPayload(
-      session,
       buildRoomsFallbackEndpoints(profileUserId),
       session.endpointMap.rooms,
       hasUsefulRoomsPayload

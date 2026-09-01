@@ -256,7 +256,7 @@ interface DashboardPanelContentProps extends DashboardPanelProps {
 }
 
 function DashboardPanelContent({ onInitialLoadStateChange, session }: DashboardPanelContentProps) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const refreshIntervalMs = useSettingsStore((state) => state.refreshIntervalMs);
   const [avatarCandidateIndex, setAvatarCandidateIndex] = useState(0);
@@ -280,13 +280,8 @@ function DashboardPanelContent({ onInitialLoadStateChange, session }: DashboardP
 
     return requestedTargetUsername;
   }, [requestedTargetUsername, session]);
-  const isGuestSession = Boolean(session && !session.token.trim());
-  const requiresPublicTarget = Boolean(isGuestSession && !externalTargetUsername);
-
   const { data, error, isLoading, isValidating } = useSWR(
-    requiresPublicTarget
-      ? null
-      : ["dashboard", session.baseUrl, session.token, session.verifiedAt, externalTargetUsername ?? ""],
+    ["dashboard", session.baseUrl, session.verifiedAt, externalTargetUsername ?? ""],
     () => fetchDashboardSnapshot(session, { targetUsername: externalTargetUsername }),
     {
       refreshInterval: refreshIntervalMs,
@@ -567,8 +562,6 @@ function DashboardPanelContent({ onInitialLoadStateChange, session }: DashboardP
     }
 
     const realtimeClient = new ScreepsRealtimeClient({
-      baseUrl: session.baseUrl,
-      token: session.token,
       reconnect: true,
       reconnectBaseMs: 1_200,
       reconnectMaxMs: 20_000,
@@ -641,7 +634,7 @@ function DashboardPanelContent({ onInitialLoadStateChange, session }: DashboardP
       }
       realtimeClient.disconnect();
     };
-  }, [realtimeChannels, session.baseUrl, session.token]);
+  }, [realtimeChannels, session.baseUrl]);
 
   useEffect(() => {
     function syncRingSize() {
@@ -684,20 +677,8 @@ function DashboardPanelContent({ onInitialLoadStateChange, session }: DashboardP
     !data &&
       ((isLoading || isValidating) ? showDelayedLoading : Boolean(error && !shouldShowError))
   );
-  const guestHint =
-    session && !session.token.trim() && !externalTargetUsername
-      ? locale === "zh-CN"
-        ? "游客模式下请先在侧边栏搜索用户名，再查看公开用户页。"
-        : "In guest mode, search a username in the sidebar before opening a public profile."
-      : undefined;
-
   return (
     <section className="panel dashboard-panel">
-      {requiresPublicTarget ? (
-        <article className="card">
-          <p className="hint-text">{guestHint}</p>
-        </article>
-      ) : null}
       {shouldShowError ? <p className="error-text">{errorToMessage(error)}</p> : null}
 
       {shouldShowLoading ? (

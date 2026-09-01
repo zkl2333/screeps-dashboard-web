@@ -1,75 +1,92 @@
 # Screeps Dashboard Docker
 
-基于 ScreepsDashboard 完整功能的 Docker-only Web 版本。项目不再包含 Tauri、桌面端、Android 或 iOS 构建链，浏览器统一通过同源 Node 服务访问 Screeps API。
+基于 ScreepsDashboard 完整功能的 Docker-only Web 版本。每个 Dashboard 实例绑定一个 Screeps 账号，浏览器通过同源 Node 服务访问 Screeps API 和实时 WebSocket，不保存或传递 Screeps Token。
 
 ## 功能
 
-- 账号登录、Token 登录和游客模式
-- 多服务器配置与私服支持
+- 单实例、单 Screeps 账号配置
+- HTTP API 和实时 WebSocket 同源代理
+- 官方服与显式 allowlist 私服支持
 - 用户资料、资源、房间、地图、排行榜和市场
 - 房间详情、官方渲染器和实时数据
 - 控制台与消息
 - 中英文界面
-- Docker 部署和同源 Screeps API 代理
+- Docker/Compose 部署
 
 ## 快速开始
+
+开发环境：
 
 ```bash
 pnpm install
 pnpm run dev
 ```
 
-开发页面位于 <http://localhost:3001>，代理健康检查位于 <http://localhost:3001/healthz>。
+开发页面位于 <http://localhost:3001>，服务端健康检查位于 <http://localhost:3001/healthz>。
 
-生产环境从源码构建：
+## Docker 单账号配置
+
+复制配置模板并填写固定账号信息：
 
 ```bash
-cp .env.example .env
-# 编辑 .env，设置管理员密码
+cp config/dashboard.json.example config/dashboard.json
+mkdir -p secrets
+printf '%s' 'YOUR_SCREEPS_TOKEN' > secrets/screeps_token
 docker compose up -d --build
 ```
 
-打开 <http://localhost:3200>。
+`config/dashboard.json` 示例：
 
-也可以直接运行 GitHub Container Registry 中的预构建镜像：
-
-```bash
-docker pull ghcr.io/zkl2333/screeps-dashboard:latest
-docker run -d \
-  --name screeps-dashboard \
-  --restart unless-stopped \
-  --read-only \
-  --tmpfs /tmp \
-  --security-opt no-new-privileges:true \
-  --env-file .env \
-  -p 3200:3000 \
-  ghcr.io/zkl2333/screeps-dashboard:latest
+```json
+{
+  "baseUrl": "https://screeps.com",
+  "username": "your-screeps-username",
+  "allowedOrigins": ["https://screeps.com"],
+  "tokenFile": "/run/secrets/screeps_token"
+}
 ```
 
-`latest` 指向默认分支的最新镜像；每次发布还会生成 `sha-<commit>` 标签。推送 `v0.1.2` 这类版本标签时，会同时生成 `v0.1.2`、`0.1.2`、`0.1` 和 `0`。GHCR 包默认为私有；私有包需要先使用具有 `read:packages` 权限的 Personal Access Token 执行 `docker login ghcr.io`，也可以在 GitHub 包设置中将其改为公开，公开包可匿名拉取。
+打开 <http://localhost:3200>。Token 通过 Docker Secret 挂载到 Node 服务端，浏览器不会接触 Token。`config/dashboard.json` 和 `secrets/` 已加入 `.gitignore`，不要提交凭据。
 
 ## 私服 allowlist
 
-默认只允许代理到 `https://screeps.com`。私服必须显式加入：
+默认只允许 `https://screeps.com`。私服必须同时配置 `baseUrl` 和 `allowedOrigins`，例如：
 
-```yaml
-services:
-  dashboard:
-    environment:
-      SCREEPS_ALLOWED_ORIGINS: https://screeps.com,https://screeps.example.com
+```json
+{
+  "baseUrl": "https://screeps.example.com",
+  "username": "your-screeps-username",
+  "allowedOrigins": ["https://screeps.example.com"],
+  "tokenFile": "/run/secrets/screeps_token"
+}
 ```
 
-只填写可信的 `http(s)` origin，不包含 API path。不要将服务端口直接暴露到不可信公网，外部访问应使用 HTTPS 和反向代理认证。
-
-管理员密码通过 `DASHBOARD_ADMIN_PASSWORD` 配置。
+只填写可信的 `http(s)` origin，不包含 API path。当前版本面向家庭局域网或 Tailscale/ZeroTier 等个人组网；不要直接将端口暴露到不可信公网。反向代理鉴权、TLS 和 OIDC 后续再补。
 
 ## 运行模式
 
 ```text
-浏览器 -> Node 静态文件服务 / 同源 API 代理 -> Screeps 官方服或私服
+浏览器 -> Node HTTP/WS 同源代理 -> Screeps 官方服或私服
+                         ↑
+                  Docker 配置 + Secret
 ```
 
-当前登录凭据仍由浏览器会话管理。后续可以独立增加服务端 session 和 Docker secret 模式，但不会改变 Docker-only 主线。
+前端只保存界面偏好和当前实例的非敏感运行元数据；Screeps Token 不写入 localStorage，也不出现在浏览器 WebSocket URL 中。
+
+## GHCR 预构建镜像
+
+```bash
+docker pull ghcr.io/zkl2333/screeps-dashboard:latest
+docker compose up -d
+```
+
+Compose 默认从源码构建；如使用预构建镜像，可将 `compose.yaml` 中的 `build: .` 替换为：
+
+```yaml
+image: ghcr.io/zkl2333/screeps-dashboard:latest
+```
+
+生产环境建议使用 `sha-<commit>` 或版本 tag，而不是可变的 `latest`。GHCR 包默认为私有；私有包需要使用具有 `read:packages` 权限的 Personal Access Token 登录 `ghcr.io`。
 
 ## 开发检查
 

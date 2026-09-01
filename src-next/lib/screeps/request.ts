@@ -42,12 +42,9 @@ function stableSerialize(value: unknown): string {
 function requestIdentity(request: ScreepsRequest): string {
   return [
     request.method ?? "GET",
-    request.baseUrl,
     request.endpoint,
     stableSerialize(request.query ?? {}),
     stableSerialize(request.body ?? null),
-    request.token?.trim() ?? "",
-    request.username?.trim() ?? "",
   ].join("|");
 }
 
@@ -58,7 +55,7 @@ function normalizeEndpoint(endpoint: string): string {
 function normalizeRequest(request: ScreepsRequest): ScreepsRequest {
   return {
     ...request,
-    baseUrl: normalizeBaseUrl(request.baseUrl),
+    baseUrl: normalizeBaseUrl(request.baseUrl ?? ""),
     endpoint: normalizeEndpoint(request.endpoint),
     method: request.method ?? "GET",
   };
@@ -93,7 +90,7 @@ function toErrorResponse(request: ScreepsRequest, error: unknown): ScreepsRespon
     status: 0,
     ok: false,
     data: { error: error instanceof Error ? error.message : "Unknown error" },
-    url: buildApiUrl(request.baseUrl, request.endpoint, request.query),
+    url: buildApiUrl(request.baseUrl ?? "", request.endpoint, request.query),
   };
 }
 
@@ -122,7 +119,12 @@ async function browserRequest(request: ScreepsRequest): Promise<ScreepsResponse>
       method: "POST",
       credentials: "same-origin",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify(request),
+      body: JSON.stringify({
+        endpoint: request.endpoint,
+        method: request.method,
+        query: request.query,
+        body: request.body,
+      }),
       signal: controller.signal,
     });
     const payload = (await response.json()) as ScreepsResponse | { error?: string };

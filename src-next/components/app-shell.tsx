@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "../lib/i18n/use-i18n";
-import { useAdminAuthStore } from "../stores/admin-auth-store";
 import { useAuthStore } from "../stores/auth-store";
 import { AppNav } from "./app-nav";
 
@@ -16,7 +15,6 @@ export function AppShell({ children }: AppShellProps) {
   const { t } = useI18n();
   const session = useAuthStore((state) => state.session);
   const clearSession = useAuthStore((state) => state.clearSession);
-  const setAuthenticated = useAdminAuthStore((state) => state.setAuthenticated);
   const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -31,15 +29,6 @@ export function AppShell({ children }: AppShellProps) {
 
   async function handleSignOut() {
     setMobileNavOpen(false);
-    try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "same-origin",
-      });
-    } catch {
-      // Ignore logout transport errors and still clear local state.
-    }
-    setAuthenticated(false);
     clearSession();
     router.replace("/login");
   }

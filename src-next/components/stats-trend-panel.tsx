@@ -139,16 +139,13 @@ export function StatsTrendPanel() {
   const { t } = useI18n();
   const [interval, setInterval] = useState<StatsTrendInterval>(180);
 
-  const hasToken = Boolean(session?.token.trim());
   const { data, error, isLoading } = useSWR(
-    hasToken && session
-      ? ["user-stats-trends", session.baseUrl, session.token, interval]
-      : null,
+    session ? ["user-stats-trends", session.baseUrl, interval] : null,
     () => {
       if (!session) {
         throw new Error("No session");
       }
-      return fetchUserStatsTrends(session, interval);
+      return fetchUserStatsTrends(interval);
     },
     {
       refreshInterval: refreshIntervalMs,
@@ -158,7 +155,7 @@ export function StatsTrendPanel() {
     }
   );
 
-  if (!hasToken) {
+  if (!session) {
     return null;
   }
 

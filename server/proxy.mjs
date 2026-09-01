@@ -15,10 +15,18 @@ function normalizeOrigin(value) {
 
 export function createProxyHandler({
   fetch: fetchImpl = globalThis.fetch,
+  baseUrl,
+  username = '',
+  token = '',
   allowedOrigins = ['https://screeps.com'],
   maxRequestBytes = 1_048_576,
 } = {}) {
+  const configuredBaseUrl = String(baseUrl || allowedOrigins[0] || '').replace(/\/+$/, '');
+  const configuredOrigin = normalizeOrigin(configuredBaseUrl);
   const allowlist = new Set(allowedOrigins.map(normalizeOrigin));
+  if (!allowlist.has(configuredOrigin)) {
+    throw new Error('SCREEPS_BASE_URL must be present in SCREEPS_ALLOWED_ORIGINS');
+  }
 
   return async function handle(request) {
     if (request.method !== 'POST') return json(405, {error: 'Method not allowed'});
@@ -36,6 +44,9 @@ export function createProxyHandler({
     } catch {
       return json(400, {error: 'Invalid JSON'});
     }
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      return json(400, {error: 'Invalid request payload'});
+    }
 
     const method = String(input.method || 'GET').toUpperCase();
     if (!METHODS.has(method)) return json(400, {error: 'Unsupported method'});
@@ -43,22 +54,14 @@ export function createProxyHandler({
       return json(400, {error: 'Invalid endpoint'});
     }
 
-    let origin;
-    try {
-      origin = normalizeOrigin(String(input.baseUrl || ''));
-    } catch {
-      return json(400, {error: 'Invalid base URL'});
-    }
-    if (!allowlist.has(origin)) return json(403, {error: 'Target origin is not allowed'});
-
-    const url = new URL(input.endpoint, `${origin}/`);
+    const url = new URL(`${configuredBaseUrl}${input.endpoint}`);
     for (const [key, value] of Object.entries(input.query || {})) {
       if (['string', 'number', 'boolean'].includes(typeof value)) url.searchParams.set(key, String(value));
     }
 
     const headers = {Accept: 'application/json'};
-    if (typeof input.token === 'string' && input.token.trim()) headers['X-Token'] = input.token.trim();
-    if (typeof input.username === 'string' && input.username.trim()) headers['X-Username'] = input.username.trim();
+    if (token) headers['X-Token'] = token;
+    if (username) headers['X-Username'] = username;
     if (method !== 'GET') headers['Content-Type'] = 'application/json';
 
     try {
@@ -74,9 +77,9 @@ export function createProxyHandler({
         try { data = JSON.parse(raw); }
         catch { data = {text: raw}; }
       }
-      return json(200, {status: upstream.status, ok: upstream.ok, data, url: upstream.url || url.toString()});
-    } catch (error) {
-      return json(502, {error: error instanceof Error ? error.message : 'Upstream request failed'});
+      return json(200, {status: upstream.status, ok: upstream.ok, data, url: url.toString()});
+    } catch {
+      return json(502, {error: 'Upstream request failed'});
     }
   };
 }

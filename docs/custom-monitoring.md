@@ -2,7 +2,7 @@
 
 ## 当前版本边界
 
-当前 Dashboard 只采集 Screeps 官方通用 WebSocket `cpu` 频道中的 CPU 使用值，并在浏览器内存中保留最近 15 分钟的折线数据。
+当前 Dashboard 通过 Node 同源 WebSocket gateway 采集 Screeps 官方通用 WebSocket `cpu` 频道中的 CPU 使用值，并在浏览器内存中保留最近 15 分钟的折线数据。Token 由服务端 Docker Secret 注入，不会传给浏览器。
 
 本版本不接入 CPU Bucket：
 

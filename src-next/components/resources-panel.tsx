@@ -352,7 +352,6 @@ export function ResourcesPanel() {
     () => normalizeTargetUsername(searchParams.get("target")),
     [searchParams]
   );
-  const isGuestSession = Boolean(session && !session.token.trim());
   const externalTargetUsername = useMemo(() => {
     if (!session || !requestedTargetUsername) {
       return undefined;
@@ -362,19 +361,16 @@ export function ResourcesPanel() {
     }
     return requestedTargetUsername;
   }, [requestedTargetUsername, session]);
-  const requiresPublicTarget = Boolean(isGuestSession && !externalTargetUsername);
-
   const {
     data: dashboardData,
     error: dashboardError,
     isLoading: dashboardLoading,
     isValidating: dashboardValidating,
   } = useSWR(
-    session && !requiresPublicTarget
+    session
       ? [
           "resources-dashboard",
           session.baseUrl,
-          session.token,
           session.verifiedAt,
           externalTargetUsername ?? "",
         ]
@@ -414,7 +410,6 @@ export function ResourcesPanel() {
       ? [
           "resources-room-objects",
           session.baseUrl,
-          session.token,
           session.verifiedAt,
           externalTargetUsername ?? "",
           roomSubscriptionKey,
@@ -644,26 +639,6 @@ export function ResourcesPanel() {
 
   if (!session) {
     return null;
-  }
-
-  if (requiresPublicTarget) {
-    const guestHint =
-      locale === "zh-CN"
-        ? "游客模式下请先在侧边栏搜索用户名，再查看该用户资源。"
-        : "In guest mode, search a username in the sidebar before opening resources.";
-    return (
-      <section className="panel resources-panel">
-        <div className="dashboard-header">
-          <div className="resources-header-copy">
-            <h1 className="page-title">{t("resources.title")}</h1>
-            <p className="resources-subtitle">{t("resources.subtitle")}</p>
-          </div>
-        </div>
-        <article className="card">
-          <p className="hint-text">{guestHint}</p>
-        </article>
-      </section>
-    );
   }
 
   const sectionTitle = {

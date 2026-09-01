@@ -1,79 +1,92 @@
 # Screeps Dashboard Docker
 
-A Docker-only Web distribution based on the full ScreepsDashboard feature set. The repository no longer includes Tauri, desktop, Android, or iOS build targets; browsers access Screeps through the same-origin Node service.
+A Docker-only Web distribution based on the full ScreepsDashboard feature set. Each Dashboard instance is bound to one Screeps account. The browser accesses HTTP APIs and realtime WebSocket data through the same-origin Node service and never stores or sends the Screeps token.
 
 ## Features
 
-- Administrator password gate for internal APIs
-- Account, token, and guest login
-- Multiple server profiles and private-server support
+- Single-instance, single-account configuration
+- Same-origin HTTP API and realtime WebSocket proxy
+- Official server and explicitly allowlisted private servers
 - User, resources, rooms, map, rankings, and market views
 - Room details, official renderer, and realtime data
 - Console and messages
 - Chinese and English UI
-- Docker deployment with a same-origin Screeps API proxy
+- Docker/Compose deployment
 
 ## Quick start
 
+For development:
+
 ```bash
 pnpm install
-```
-
-Set `DASHBOARD_ADMIN_PASSWORD` in the shell, then run:
-
-```bash
 pnpm run dev
 ```
 
-The development UI is available at <http://localhost:3001>; its proxied health endpoint is <http://localhost:3001/healthz>.
+The development UI is available at <http://localhost:3001>; the server health endpoint is <http://localhost:3001/healthz>.
 
-For production builds from source, create a `.env` file from `.env.example`, set the administrator password, and start the container:
+## Docker single-account configuration
+
+Copy the configuration template and fill in the fixed account information:
 
 ```bash
-cp .env.example .env
+cp config/dashboard.json.example config/dashboard.json
+mkdir -p secrets
+printf '%s' 'YOUR_SCREEPS_TOKEN' > secrets/screeps_token
 docker compose up -d --build
 ```
 
-Open <http://localhost:3200>.
+Example `config/dashboard.json`:
 
-Alternatively, run the prebuilt image from GitHub Container Registry:
-
-```bash
-docker pull ghcr.io/zkl2333/screeps-dashboard:latest
-docker run -d \
-  --name screeps-dashboard \
-  --restart unless-stopped \
-  --read-only \
-  --tmpfs /tmp \
-  --security-opt no-new-privileges:true \
-  --env-file .env \
-  -p 3200:3000 \
-  ghcr.io/zkl2333/screeps-dashboard:latest
+```json
+{
+  "baseUrl": "https://screeps.com",
+  "username": "your-screeps-username",
+  "allowedOrigins": ["https://screeps.com"],
+  "tokenFile": "/run/secrets/screeps_token"
+}
 ```
 
-`latest` tracks the newest image from the default branch, and every build also receives a `sha-<commit>` tag. Pushing a release tag such as `v0.1.2` additionally creates `v0.1.2`, `0.1.2`, `0.1`, and `0`. GHCR packages are private by default. For a private package, run `docker login ghcr.io` with a Personal Access Token that has `read:packages`; alternatively, make the package public in its GitHub settings to allow anonymous pulls.
+Open <http://localhost:3200>. The token is mounted as a Docker Secret and used only by the Node service; the browser never receives it. `config/dashboard.json` and `secrets/` are ignored by Git and must not contain committed credentials.
 
 ## Private-server allowlist
 
-The default target is `https://screeps.com`. Add private servers explicitly:
+The default target is `https://screeps.com`. A private server must be present in both `baseUrl` and `allowedOrigins`, for example:
 
-```yaml
-services:
-  dashboard:
-    environment:
-      SCREEPS_ALLOWED_ORIGINS: https://screeps.com,https://screeps.example.com
-      DASHBOARD_ADMIN_PASSWORD: ${DASHBOARD_ADMIN_PASSWORD}
+```json
+{
+  "baseUrl": "https://screeps.example.com",
+  "username": "your-screeps-username",
+  "allowedOrigins": ["https://screeps.example.com"],
+  "tokenFile": "/run/secrets/screeps_token"
+}
 ```
 
-Only use trusted `http(s)` origins without an API path. Put HTTPS and reverse-proxy authentication in front of any public deployment.
+Only use trusted `http(s)` origins without an API path. This version targets a home LAN or a private mesh such as Tailscale/ZeroTier; do not expose the port directly to an untrusted public network. Reverse-proxy authentication, TLS, and OIDC are intentionally deferred.
 
 ## Architecture
 
 ```text
-Browser -> Node static server / same-origin API proxy -> Screeps official or private server
+Browser -> Node same-origin HTTP/WS proxy -> Screeps official or private server
+                                      ↑
+                             Docker config + Secret
 ```
 
-The administrator session is stored in memory and is cleared when the Node process restarts. Screeps credentials are still managed by the browser in this version.
+The frontend stores only interface preferences and non-sensitive instance metadata. The Screeps token is not written to localStorage and does not appear in the browser WebSocket URL.
+
+## GHCR prebuilt image
+
+```bash
+docker pull ghcr.io/zkl2333/screeps-dashboard:latest
+docker compose up -d
+```
+
+Compose builds from source by default. To use a prebuilt image, replace `build: .` in `compose.yaml` with:
+
+```yaml
+image: ghcr.io/zkl2333/screeps-dashboard:latest
+```
+
+For production, prefer a `sha-<commit>` or version tag over mutable `latest`. GHCR packages are private by default; private packages require a Personal Access Token with `read:packages` to log in to `ghcr.io`.
 
 ## Checks
 

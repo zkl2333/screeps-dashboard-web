@@ -1,5 +1,4 @@
 import { screepsBatchRequest } from "./request";
-import type { ScreepsSession } from "./types";
 
 export const STATS_TREND_STAT_NAMES = [
   "energyHarvested",
@@ -107,17 +106,13 @@ function parseStatsSeries(
 }
 
 export async function fetchUserStatsTrends(
-  session: ScreepsSession,
   interval: StatsTrendInterval
 ): Promise<StatsTrendSeries[]> {
   const responses = await screepsBatchRequest(
     STATS_TREND_STAT_NAMES.map((statName) => ({
-      baseUrl: session.baseUrl,
       endpoint: "/api/user/overview",
       method: "GET" as const,
       query: { interval, statName },
-      token: session.token,
-      username: session.username,
     })),
     { maxConcurrency: 4 }
   );
