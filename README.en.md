@@ -27,7 +27,7 @@ pnpm run dev
 
 The development UI is available at <http://localhost:3001>; its proxied health endpoint is <http://localhost:3001/healthz>.
 
-For production, create a `.env` file from `.env.example`, set the administrator password, and start the container:
+For production builds from source, create a `.env` file from `.env.example`, set the administrator password, and start the container:
 
 ```bash
 cp .env.example .env
@@ -35,6 +35,23 @@ docker compose up -d --build
 ```
 
 Open <http://localhost:3200>.
+
+Alternatively, run the prebuilt image from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/zkl2333/screeps-dashboard:latest
+docker run -d \
+  --name screeps-dashboard \
+  --restart unless-stopped \
+  --read-only \
+  --tmpfs /tmp \
+  --security-opt no-new-privileges:true \
+  --env-file .env \
+  -p 3200:3000 \
+  ghcr.io/zkl2333/screeps-dashboard:latest
+```
+
+`latest` tracks the newest image from the default branch, and every build also receives a `sha-<commit>` tag. Pushing a release tag such as `v0.1.2` additionally creates `v0.1.2`, `0.1.2`, `0.1`, and `0`. GHCR packages are private by default. For a private package, run `docker login ghcr.io` with a Personal Access Token that has `read:packages`; alternatively, make the package public in its GitHub settings to allow anonymous pulls.
 
 ## Private-server allowlist
 

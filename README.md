@@ -21,13 +21,32 @@ pnpm run dev
 
 开发页面位于 <http://localhost:3001>，代理健康检查位于 <http://localhost:3001/healthz>。
 
-生产 Docker：
+生产环境从源码构建：
 
 ```bash
+cp .env.example .env
+# 编辑 .env，设置管理员密码
 docker compose up -d --build
 ```
 
 打开 <http://localhost:3200>。
+
+也可以直接运行 GitHub Container Registry 中的预构建镜像：
+
+```bash
+docker pull ghcr.io/zkl2333/screeps-dashboard:latest
+docker run -d \
+  --name screeps-dashboard \
+  --restart unless-stopped \
+  --read-only \
+  --tmpfs /tmp \
+  --security-opt no-new-privileges:true \
+  --env-file .env \
+  -p 3200:3000 \
+  ghcr.io/zkl2333/screeps-dashboard:latest
+```
+
+`latest` 指向默认分支的最新镜像；每次发布还会生成 `sha-<commit>` 标签。推送 `v0.1.2` 这类版本标签时，会同时生成 `v0.1.2`、`0.1.2`、`0.1` 和 `0`。GHCR 包默认为私有；私有包需要先使用具有 `read:packages` 权限的 Personal Access Token 执行 `docker login ghcr.io`，也可以在 GitHub 包设置中将其改为公开，公开包可匿名拉取。
 
 ## 私服 allowlist
 

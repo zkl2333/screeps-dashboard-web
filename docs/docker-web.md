@@ -4,9 +4,36 @@
 
 ## 启动
 
+从源码构建并启动：
+
 ```bash
+cp .env.example .env
+# 编辑 .env，设置 DASHBOARD_ADMIN_PASSWORD
 docker compose up -d --build
 ```
+
+也可以直接运行 GitHub Container Registry 中的预构建镜像：
+
+```bash
+docker pull ghcr.io/zkl2333/screeps-dashboard:latest
+docker run -d \
+  --name screeps-dashboard \
+  --restart unless-stopped \
+  --read-only \
+  --tmpfs /tmp \
+  --security-opt no-new-privileges:true \
+  --env-file .env \
+  -p 3200:3000 \
+  ghcr.io/zkl2333/screeps-dashboard:latest
+```
+
+`latest` 跟随默认分支，`sha-<commit>` 可用于固定到具体提交。`v0.1.2` 这类 Git tag 会发布 `v0.1.2`、`0.1.2`、`0.1` 和 `0`。GHCR 包默认为私有；拉取私有包前，需要使用具有 `read:packages` 权限的 Personal Access Token 登录：
+
+```bash
+echo "$GHCR_TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
+```
+
+也可以在 GitHub 包设置中将镜像设为公开，以便匿名拉取。
 
 打开 <http://localhost:3200>，健康检查：
 
