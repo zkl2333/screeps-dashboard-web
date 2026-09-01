@@ -375,22 +375,16 @@ function groupOrdersByResource(
   return output;
 }
 
-async function fetchResourceTypesFromIndex(session: ScreepsSession): Promise<string[]> {
+async function fetchResourceTypesFromIndex(): Promise<string[]> {
   const candidates: ScreepsRequest[] = [
     {
-      baseUrl: session.baseUrl,
       endpoint: "/api/game/market/orders-index",
       method: "GET",
-      token: session.token,
-      username: session.username,
     },
     {
-      baseUrl: session.baseUrl,
       endpoint: "/api/game/market/orders-index",
       method: "POST",
       body: {},
-      token: session.token,
-      username: session.username,
     },
   ];
 
@@ -416,7 +410,6 @@ async function fetchResourceTypesFromIndex(session: ScreepsSession): Promise<str
 }
 
 async function fetchOrdersWithCandidates(
-  session: ScreepsSession,
   resourceType: string,
   shardInput?: string
 ): Promise<MarketOrderSummary[]> {
@@ -454,13 +447,10 @@ async function fetchOrdersWithCandidates(
   for (const candidate of requestCandidates) {
     try {
       const response = await screepsRequest({
-        baseUrl: session.baseUrl,
         endpoint: "/api/game/market/orders",
         method: candidate.method,
         query: candidate.query,
         body: candidate.body,
-        token: session.token,
-        username: session.username,
       });
 
       if (!response.ok) {
@@ -486,7 +476,6 @@ async function fetchOrdersWithCandidates(
 }
 
 async function fetchOrdersByResource(
-  session: ScreepsSession,
   resourceTypes: string[]
 ): Promise<MarketResourceOrders[]> {
   const normalizedResourceTypes = sortResourceTypes(resourceTypes);
@@ -497,7 +486,7 @@ async function fetchOrdersByResource(
   const orders = await mapWithConcurrency(
     normalizedResourceTypes,
     marketRequestConcurrency(normalizedResourceTypes.length),
-    (resourceType) => fetchOrdersWithCandidates(session, resourceType)
+    (resourceType) => fetchOrdersWithCandidates(resourceType)
   );
 
   const mergedOrders: MarketOrderSummary[] = [];
@@ -510,22 +499,16 @@ async function fetchOrdersByResource(
   return groupOrdersByResource(normalizedResourceTypes, mergedOrders);
 }
 
-async function fetchOrdersWithoutResourceIndex(session: ScreepsSession): Promise<MarketResourceOrders[]> {
+async function fetchOrdersWithoutResourceIndex(): Promise<MarketResourceOrders[]> {
   const candidates: ScreepsRequest[] = [
     {
-      baseUrl: session.baseUrl,
       endpoint: "/api/game/market/orders",
       method: "GET",
-      token: session.token,
-      username: session.username,
     },
     {
-      baseUrl: session.baseUrl,
       endpoint: "/api/game/market/orders",
       method: "POST",
       body: {},
-      token: session.token,
-      username: session.username,
     },
   ];
 
@@ -557,9 +540,9 @@ export async function fetchMarketSnapshot(session: ScreepsSession): Promise<Mark
     fetchMarketResourceCatalog(session),
   ]);
 
-  let ordersByResource = await fetchOrdersByResource(session, resourceTypes);
+  let ordersByResource = await fetchOrdersByResource(resourceTypes);
   if (ordersByResource.length === 0) {
-    ordersByResource = await fetchOrdersWithoutResourceIndex(session);
+    ordersByResource = await fetchOrdersWithoutResourceIndex();
   }
 
   return {
@@ -570,13 +553,13 @@ export async function fetchMarketSnapshot(session: ScreepsSession): Promise<Mark
   };
 }
 
-export async function fetchMarketResourceCatalog(session: ScreepsSession): Promise<string[]> {
-  const resourceTypes = await fetchResourceTypesFromIndex(session);
+export async function fetchMarketResourceCatalog(_session: ScreepsSession): Promise<string[]> {
+  const resourceTypes = await fetchResourceTypesFromIndex();
   if (resourceTypes.length > 0) {
     return sortResourceTypes([...KNOWN_MARKET_RESOURCES, ...resourceTypes]);
   }
 
-  const ordersByResource = await fetchOrdersWithoutResourceIndex(session);
+  const ordersByResource = await fetchOrdersWithoutResourceIndex();
   if (ordersByResource.length > 0) {
     return sortResourceTypes([
       ...KNOWN_MARKET_RESOURCES,
@@ -588,7 +571,7 @@ export async function fetchMarketResourceCatalog(session: ScreepsSession): Promi
 }
 
 export async function fetchMarketResourceOrders(
-  session: ScreepsSession,
+  _session: ScreepsSession,
   resourceTypeInput: string,
   shardInput?: string
 ): Promise<MarketResourceOrders> {
@@ -597,10 +580,10 @@ export async function fetchMarketResourceOrders(
     throw new Error("Resource type is required.");
   }
 
-  let orders = await fetchOrdersWithCandidates(session, resourceType, shardInput);
+  let orders = await fetchOrdersWithCandidates(resourceType, shardInput);
   const normalizedShard = normalizeShard(shardInput);
   if (normalizedShard && orders.length === 0) {
-    const fallbackOrders = await fetchOrdersWithCandidates(session, resourceType);
+    const fallbackOrders = await fetchOrdersWithCandidates(resourceType);
     if (fallbackOrders.length > 0 && fallbackOrders.every((order) => !normalizeShard(order.shard))) {
       orders = fallbackOrders.map((order) => ({ ...order, shard: normalizedShard }));
     } else {

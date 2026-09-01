@@ -1,0 +1,5 @@
+node_modules
+.gi
+src-next/.nex
+src-next/ou
+*.log

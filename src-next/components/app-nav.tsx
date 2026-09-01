@@ -134,7 +134,6 @@ export function AppNav({ onNavigate }: AppNavProps) {
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const { t, locale } = useI18n();
-  const isGuestSession = Boolean(session && !session.token.trim());
   const [publicSearchUsername, setPublicSearchUsername] = useState("");
   const resourcesLabel = t("nav.resourcesLabel");
   const mapLabel = t("nav.mapLabel");
@@ -192,22 +191,18 @@ export function AppNav({ onNavigate }: AppNavProps) {
           meta: "/market",
           icon: "market",
         },
-        ...(!isGuestSession
-          ? [
-              {
-                href: "/messages",
-                label: mailLabel,
-                meta: "/messages",
-                icon: "mail",
-              } satisfies NavItem,
-              {
-                href: "/console",
-                label: t("nav.consoleLabel"),
-                meta: "/console",
-                icon: "console",
-              } satisfies NavItem,
-            ]
-          : []),
+        {
+          href: "/messages",
+          label: mailLabel,
+          meta: "/messages",
+          icon: "mail",
+        },
+        {
+          href: "/console",
+          label: t("nav.consoleLabel"),
+          meta: "/console",
+          icon: "console",
+        },
         {
           href: "/rankings",
           label: t("nav.rankingsLabel"),

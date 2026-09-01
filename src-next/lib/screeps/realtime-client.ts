@@ -1,5 +1,3 @@
-import { normalizeBaseUrl } from "./request";
-
 export type RealtimeConnectionState = "idle" | "connecting" | "connected" | "closed";
 
 export interface ScreepsRealtimeEvent {
@@ -10,8 +8,6 @@ export interface ScreepsRealtimeEvent {
 }
 
 export interface ScreepsRealtimeClientOptions {
-  baseUrl: string;
-  token?: string;
   reconnect?: boolean;
   reconnectBaseMs?: number;
   reconnectMaxMs?: number;
@@ -19,7 +15,6 @@ export interface ScreepsRealtimeClientOptions {
 
 type RealtimeHandler = (event: ScreepsRealtimeEvent) => void;
 
-const AUTH_REFRESH_INTERVAL_MS = 45_000;
 const AUTH_USER_ID_PATTERN =
   /\b(?:[0-9a-f]{24}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i;
 
@@ -227,12 +222,6 @@ function parseSocketLine(line: string): { channel: string; payload: unknown } | 
   };
 }
 
-function normalizeWebSocketPath(pathname: string): string {
-  const normalizedPath = pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
-  const socketPath = `${normalizedPath}/socket/websocket`;
-  return socketPath.replace(/\/{2,}/g, "/");
-}
-
 async function readSocketDataAsText(data: unknown): Promise<string | null> {
   if (typeof data === "string") {
     return data;
@@ -254,36 +243,22 @@ async function readSocketDataAsText(data: unknown): Promise<string | null> {
   return null;
 }
 
-export function buildScreepsSocketUrl(baseUrl: string, token?: string): string {
-  const normalizedBase = normalizeBaseUrl(baseUrl);
-  const url = new URL(normalizedBase);
-  const host = url.hostname.trim().toLowerCase();
-  const isLoopbackHost =
-    host === "localhost" ||
-    host === "127.0.0.1" ||
-    host === "::1" ||
-    host === "[::1]";
-  url.protocol = isLoopbackHost ? "ws:" : "wss:";
-  url.pathname = normalizeWebSocketPath(url.pathname);
-
-  const trimmedToken = token?.trim();
-  if (trimmedToken) {
-    url.searchParams.set("_token", trimmedToken);
+export function buildScreepsSocketUrl(): string {
+  if (typeof window === "undefined") {
+    return "ws://localhost/socket/websocket";
   }
-
+  const url = new URL("/socket/websocket", window.location.origin);
+  url.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   return url.toString();
 }
 
 export class ScreepsRealtimeClient {
-  private readonly baseUrl: string;
-  private readonly token?: string;
   private readonly reconnect: boolean;
   private readonly reconnectBaseMs: number;
   private readonly reconnectMaxMs: number;
 
   private socket: WebSocket | null = null;
   private reconnectTimer: number | null = null;
-  private authRefreshTimer: number | null = null;
   private reconnectAttempt = 0;
   private manualClose = false;
   private state: RealtimeConnectionState = "idle";
@@ -295,8 +270,6 @@ export class ScreepsRealtimeClient {
   private readonly subscriptions = new Map<string, number>();
 
   constructor(options: ScreepsRealtimeClientOptions) {
-    this.baseUrl = normalizeBaseUrl(options.baseUrl);
-    this.token = options.token?.trim() || undefined;
     this.reconnect = options.reconnect ?? true;
     this.reconnectBaseMs = options.reconnectBaseMs ?? 1_000;
     this.reconnectMaxMs = options.reconnectMaxMs ?? 20_000;
@@ -318,7 +291,6 @@ export class ScreepsRealtimeClient {
   disconnect(): void {
     this.manualClose = true;
     this.clearReconnectTimer();
-    this.clearAuthRefreshTimer();
     this.reconnectAttempt = 0;
     this.socketIoMode = false;
 
@@ -436,24 +408,6 @@ export class ScreepsRealtimeClient {
     }
   }
 
-  private clearAuthRefreshTimer(): void {
-    if (this.authRefreshTimer !== null) {
-      clearInterval(this.authRefreshTimer);
-      this.authRefreshTimer = null;
-    }
-  }
-
-  private startAuthRefresh(): void {
-    this.clearAuthRefreshTimer();
-    if (!this.token) {
-      return;
-    }
-
-    this.authRefreshTimer = window.setInterval(() => {
-      this.sendCommand(`auth ${this.token}`);
-    }, AUTH_REFRESH_INTERVAL_MS);
-  }
-
   private flushSubscriptions(): void {
     for (const channel of this.subscriptions.keys()) {
       this.sendCommand(`subscribe ${channel}`);
@@ -483,9 +437,6 @@ export class ScreepsRealtimeClient {
 
     this.socket.send("40");
     this.logDebug("socket.io send", "40");
-    if (this.token) {
-      this.sendSocketIoCommand("auth", this.token);
-    }
     this.flushSocketIoSubscriptions();
   }
 
@@ -517,7 +468,7 @@ export class ScreepsRealtimeClient {
     this.clearReconnectTimer();
     this.setState("connecting");
 
-    const socketUrl = buildScreepsSocketUrl(this.baseUrl, this.token);
+    const socketUrl = buildScreepsSocketUrl();
     this.logDebug("open", socketUrl);
     const socket = new WebSocket(socketUrl);
     this.socket = socket;
@@ -530,11 +481,6 @@ export class ScreepsRealtimeClient {
 
       this.reconnectAttempt = 0;
       this.setState("connected");
-      this.startAuthRefresh();
-
-      if (this.token) {
-        this.sendCommand(`auth ${this.token}`);
-      }
       this.flushSubscriptions();
     });
 
@@ -552,8 +498,7 @@ export class ScreepsRealtimeClient {
       if (this.socket === socket) {
         this.socket = null;
       }
-      this.clearAuthRefreshTimer();
-      this.setState("closed");
+        this.setState("closed");
       this.scheduleReconnect();
     });
   }

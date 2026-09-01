@@ -7,7 +7,6 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
-  type WheelEvent as ReactWheelEvent,
 } from "react";
 import {
   DEFAULT_ZOOM,
@@ -384,8 +383,10 @@ export function RoomGameplayMap({
     centerView(getFitZoom(viewportSize));
   }, [centerView, viewportSize]);
 
+  // React 的根容器 wheel 监听是 passive 的，preventDefault 会告警且无效，
+  // 因此用原生监听显式注册为非 passive。
   const handleWheel = useCallback(
-    (event: ReactWheelEvent<HTMLDivElement>) => {
+    (event: WheelEvent) => {
       if (!viewportReady) {
         return;
       }
@@ -405,6 +406,17 @@ export function RoomGameplayMap({
     },
     [applyZoom, viewportReady, zoom]
   );
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) {
+      return undefined;
+    }
+    viewport.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      viewport.removeEventListener("wheel", handleWheel);
+    };
+  }, [handleWheel]);
 
   const handlePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -481,7 +493,6 @@ export function RoomGameplayMap({
       <div
         ref={viewportRef}
         className={`room-game-map-viewport room-game-map-viewport-official${isDragging ? " is-dragging" : ""}`}
-        onWheel={handleWheel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={endDrag}

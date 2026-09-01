@@ -13,13 +13,14 @@ import {
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { useI18n } from "../lib/i18n/use-i18n";
+import { fetchDashboardSnapshot } from "../lib/screeps/dashboard";
 import {
   extractRoomDetailRealtimePatch,
   fetchRoomDetailSnapshot,
   type RoomDetailRealtimePatch,
 } from "../lib/screeps/room-detail";
 import { ScreepsRealtimeClient } from "../lib/screeps/realtime-client";
-import type { RoomDetailSnapshot } from "../lib/screeps/types";
+import type { RoomDetailSnapshot, RoomSummary } from "../lib/screeps/types";
 import { useAuthStore } from "../stores/auth-store";
 import { RoomGameplayMap } from "./room-gameplay-map";
 
@@ -31,6 +32,11 @@ interface RoomDetailPanelProps {
 const SHARD_PATTERN = /^shard\d+$/i;
 const DEFAULT_REALTIME_SHARDS = ["shard0", "shard1", "shard2", "shard3"] as const;
 const ROOM_CHANNEL_PREFIX = "room:";
+
+function toRoomOptionKey(room: RoomSummary): string {
+  const shard = normalizeShardValue(room.shard) ?? "";
+  return `${shard}/${room.name.trim().toUpperCase()}`;
+}
 
 function normalizeShardValue(value: string | null | undefined): string | undefined {
   if (!value) {
@@ -211,10 +217,47 @@ export function RoomDetailPanel({ roomName, roomShard }: RoomDetailPanelProps) {
   const [roomInput, setRoomInput] = useState(normalizedName);
   const [shardInput, setShardInput] = useState(normalizedShard ?? "");
   const [liveSnapshot, setLiveSnapshot] = useState<RoomDetailSnapshot | undefined>(undefined);
+  const {
+    data: dashboardData,
+    error: ownedRoomsError,
+    isLoading: ownedRoomsLoading,
+  } = useSWR(
+    session
+      ? ["dashboard", session.baseUrl, session.verifiedAt, ""]
+      : null,
+    () => {
+      if (!session) {
+        throw new Error("Session unavailable.");
+      }
+      return fetchDashboardSnapshot(session);
+    },
+    {
+      dedupingInterval: 8_000,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+
+  const ownedRooms = useMemo(
+    () =>
+      [...(dashboardData?.rooms ?? [])].sort((left, right) => {
+        const shardOrder = (left.shard ?? "").localeCompare(right.shard ?? "");
+        return shardOrder || left.name.localeCompare(right.name);
+      }),
+    [dashboardData?.rooms]
+  );
+  const selectedOwnedRoomKey = useMemo(() => {
+    const exactRoom = ownedRooms.find(
+      (room) =>
+        room.name.trim().toUpperCase() === normalizedName &&
+        normalizeShardValue(room.shard) === normalizedShard
+    );
+    return exactRoom ? toRoomOptionKey(exactRoom) : "";
+  }, [normalizedName, normalizedShard, ownedRooms]);
 
   const swrKey =
     session && normalizedName
-      ? ["room-detail", session.baseUrl, session.token, normalizedName, normalizedShard ?? ""]
+      ? ["room-detail", session.baseUrl, normalizedName, normalizedShard ?? ""]
       : null;
 
   const { data, error, isLoading, mutate } = useSWR(
@@ -241,7 +284,7 @@ export function RoomDetailPanel({ roomName, roomShard }: RoomDetailPanelProps) {
   useEffect(() => {
     setLiveSnapshot(undefined);
     lastRealtimeMutateAt.current = 0;
-  }, [normalizedName, normalizedShard, session?.baseUrl, session?.token]);
+  }, [normalizedName, normalizedShard, session?.baseUrl]);
 
   useEffect(() => {
     if (!data) {
@@ -256,8 +299,6 @@ export function RoomDetailPanel({ roomName, roomShard }: RoomDetailPanelProps) {
     }
 
     const realtimeClient = new ScreepsRealtimeClient({
-      baseUrl: session.baseUrl,
-      token: session.token,
       reconnect: true,
       reconnectBaseMs: 1_200,
       reconnectMaxMs: 20_000,
@@ -340,6 +381,27 @@ export function RoomDetailPanel({ roomName, roomShard }: RoomDetailPanelProps) {
     [normalizedName, roomInput, roomShard, router, shardInput]
   );
 
+  const handleOwnedRoomChange = useCallback(
+    (roomKey: string) => {
+      const room = ownedRooms.find((candidate) => toRoomOptionKey(candidate) === roomKey);
+      if (!room) {
+        return;
+      }
+
+      const nextRoomName = room.name.trim().toUpperCase();
+      const nextShard = normalizeShardValue(room.shard);
+      const searchParams = new URLSearchParams({ name: nextRoomName });
+      if (nextShard) {
+        searchParams.set("shard", nextShard);
+      }
+
+      setRoomInput(nextRoomName);
+      setShardInput(nextShard ?? "");
+      router.push(`/rooms?${searchParams.toString()}`);
+    },
+    [ownedRooms, router]
+  );
+
   const handleNavigateRoom = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -367,6 +429,35 @@ export function RoomDetailPanel({ roomName, roomShard }: RoomDetailPanelProps) {
     >
       <header className="dashboard-header">
         <form className="room-detail-nav-form" onSubmit={handleNavigateRoom}>
+          {session ? (
+            <select
+              className="room-detail-nav-input room-detail-nav-owned"
+              value={selectedOwnedRoomKey}
+              onChange={(event) => handleOwnedRoomChange(event.currentTarget.value)}
+              aria-label={t("rooms.myRooms")}
+              disabled={ownedRoomsLoading && ownedRooms.length === 0}
+              title={ownedRoomsError ? t("rooms.myRoomsError") : t("rooms.myRooms")}
+            >
+              <option value="">
+                {ownedRoomsLoading && ownedRooms.length === 0
+                  ? t("rooms.myRoomsLoading")
+                  : ownedRoomsError && ownedRooms.length === 0
+                    ? t("rooms.myRoomsError")
+                    : ownedRooms.length === 0
+                      ? t("rooms.myRoomsEmpty")
+                      : t("rooms.selectMyRoom")}
+              </option>
+              {ownedRooms.map((room) => {
+                const roomKey = toRoomOptionKey(room);
+                const roomLabel = room.shard ? `${room.name} - ${room.shard}` : room.name;
+                return (
+                  <option key={roomKey} value={roomKey}>
+                    {roomLabel}
+                  </option>
+                );
+              })}
+            </select>
+          ) : null}
           <input
             className="room-detail-nav-input"
             value={roomInput}

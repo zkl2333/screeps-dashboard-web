@@ -253,11 +253,6 @@ export function MessagesPanel() {
   const { locale } = useI18n();
   const session = useAuthStore((state) => state.session);
   const isZh = locale === "zh-CN";
-  const isGuestSession = Boolean(session && !session.token.trim());
-  const guestHint = isZh
-    ? "游客模式下无法查看消息，请登录可用 Token 的账号。"
-    : "Messages are unavailable in guest mode. Please sign in with a token account.";
-
   const [conversationsMap, setConversationsMap] = useState<ProcessedConversationMap>({});
   const [threadMessagesByPeer, setThreadMessagesByPeer] = useState<Record<string, ProcessedConversationMessage[]>>({});
   const [threadLoadingPeer, setThreadLoadingPeer] = useState<string | null>(null);
@@ -274,7 +269,7 @@ export function MessagesPanel() {
 
   const streamRef = useRef<HTMLDivElement | null>(null);
   const sessionKey = session
-    ? `${session.baseUrl}|${session.username}|${session.token}|${session.accountId ?? ""}`
+    ? `${session.baseUrl}|${session.username}|${session.userId ?? ""}`
     : "";
 
   const labels = useMemo(
@@ -336,7 +331,7 @@ export function MessagesPanel() {
   );
 
   const loadMessages = useCallback(async () => {
-    if (!session || isGuestSession) {
+    if (!session) {
       setConversationsMap({});
       setThreadMessagesByPeer({});
       setIsLoading(false);
@@ -365,7 +360,7 @@ export function MessagesPanel() {
     } finally {
       setIsLoading(false);
     }
-  }, [isGuestSession, labels.failedToLoad, labels.unknownError, session]);
+  }, [labels.failedToLoad, labels.unknownError, session]);
 
   useEffect(() => {
     void loadMessages();
@@ -373,7 +368,7 @@ export function MessagesPanel() {
 
   const loadConversationThread = useCallback(
     async (peerId: string, peerUsername: string, peerAvatarUrl?: string, peerHasBadge?: boolean) => {
-      if (!session || isGuestSession) {
+      if (!session) {
         return;
       }
       setThreadLoadingPeer(peerId);
@@ -413,12 +408,12 @@ export function MessagesPanel() {
         setThreadLoadingPeer((current) => (current === peerId ? null : current));
       }
     },
-    [isGuestSession, labels.failedToLoad, labels.unknownError, session]
+    [labels.failedToLoad, labels.unknownError, session]
   );
 
   const appendLocalOutboundMessage = useCallback(
     (conversation: ProcessedConversation, text: string) => {
-      if (!session || isGuestSession) {
+      if (!session) {
         return;
       }
       const createdAt = new Date().toISOString();
@@ -460,7 +455,7 @@ export function MessagesPanel() {
         };
       });
     },
-    [isGuestSession, session]
+    [session]
   );
 
   const conversations = useMemo<ConversationView[]>(() => {
@@ -532,7 +527,7 @@ export function MessagesPanel() {
   const activePeerDisplay = selectedConversation ? selectedConversation.peerUsername : "--";
 
   useEffect(() => {
-    if (!selectedPeerId || !session || isGuestSession) {
+    if (!selectedPeerId || !session) {
       return;
     }
     void loadConversationThread(selectedPeerId, selectedPeerUsername, selectedPeerAvatarUrl, selectedPeerHasBadge);
@@ -542,7 +537,6 @@ export function MessagesPanel() {
     selectedPeerHasBadge,
     selectedPeerId,
     selectedPeerUsername,
-    isGuestSession,
     session,
     sessionKey,
   ]);
@@ -564,7 +558,7 @@ export function MessagesPanel() {
   }, [toastMessage]);
 
   async function handleSendMessage() {
-    if (!session || isGuestSession) {
+    if (!session) {
       return;
     }
     setComposeError(null);
@@ -608,22 +602,6 @@ export function MessagesPanel() {
 
   function handleBackToConversations() {
     setMobilePane("list");
-  }
-
-  if (isGuestSession) {
-    return (
-      <section className="panel dashboard-panel messages-panel chat-messages-panel">
-        <header className="dashboard-header">
-          <div>
-            <h1 className="page-title">{labels.title}</h1>
-            <p className="page-subtitle">{labels.subtitle}</p>
-          </div>
-        </header>
-        <article className="card">
-          <p className="hint-text">{guestHint}</p>
-        </article>
-      </section>
-    );
   }
 
   return (

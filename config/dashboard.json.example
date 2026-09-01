@@ -1,0 +1,6 @@
+{
+  "baseUrl": "https://screeps.com",
+  "username": "your-screeps-username",
+  "allowedOrigins": ["https://screeps.com"],
+  "tokenFile": "/run/secrets/screeps_token"
+}

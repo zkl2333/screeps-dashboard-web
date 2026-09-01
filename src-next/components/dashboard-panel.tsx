@@ -28,12 +28,14 @@ import {
   toRoomMapOverlayKey,
   type RoomMapOverlay,
 } from "../lib/screeps/room-map-realtime";
-import type { RoomObjectSummary, RoomThumbnail } from "../lib/screeps/types";
+import type { RoomObjectSummary, RoomThumbnail, ScreepsSession } from "../lib/screeps/types";
 import { useAuthStore } from "../stores/auth-store";
 import { useSettingsStore } from "../stores/settings-store";
 import { MetricCell } from "./metric-cell";
 import { MetricBar } from "./metric-bar";
 import { CircularProgress } from "./circular-progress";
+import { RuntimeMonitorPanel } from "./runtime-monitor-panel";
+import { StatsTrendPanel } from "./stats-trend-panel";
 import { TerrainThumbnail } from "./terrain-thumbnail";
 
 const EMPTY_ROOM_THUMBNAILS: ReadonlyArray<RoomThumbnail> = [];
@@ -179,12 +181,8 @@ function buildRuntimeChannels(
     "cpu",
     "memory",
     "stats",
-    "cpubucket",
-    "bucket",
     "user/cpu",
     "user/memory",
-    "user/cpubucket",
-    "user/bucket",
     "user/stats",
   ]);
 
@@ -206,13 +204,9 @@ function buildRuntimeChannels(
   for (const identity of identityCandidates) {
     channels.add(`user:${identity}/cpu`);
     channels.add(`user:${identity}/memory`);
-    channels.add(`user:${identity}/cpubucket`);
-    channels.add(`user:${identity}/bucket`);
     channels.add(`user:${identity}/stats`);
     channels.add(`user/${identity}/cpu`);
     channels.add(`user/${identity}/memory`);
-    channels.add(`user/${identity}/cpubucket`);
-    channels.add(`user/${identity}/bucket`);
     channels.add(`user/${identity}/stats`);
   }
 
@@ -245,8 +239,24 @@ interface DashboardPanelProps {
 }
 
 export function DashboardPanel({ onInitialLoadStateChange }: DashboardPanelProps) {
-  const { t, locale } = useI18n();
   const session = useAuthStore((state) => state.session);
+  if (!session) {
+    return null;
+  }
+  return (
+    <DashboardPanelContent
+      onInitialLoadStateChange={onInitialLoadStateChange}
+      session={session}
+    />
+  );
+}
+
+interface DashboardPanelContentProps extends DashboardPanelProps {
+  session: ScreepsSession;
+}
+
+function DashboardPanelContent({ onInitialLoadStateChange, session }: DashboardPanelContentProps) {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const refreshIntervalMs = useSettingsStore((state) => state.refreshIntervalMs);
   const [avatarCandidateIndex, setAvatarCandidateIndex] = useState(0);
@@ -270,17 +280,8 @@ export function DashboardPanel({ onInitialLoadStateChange }: DashboardPanelProps
 
     return requestedTargetUsername;
   }, [requestedTargetUsername, session]);
-  const isGuestSession = Boolean(session && !session.token.trim());
-  const requiresPublicTarget = Boolean(isGuestSession && !externalTargetUsername);
-
-  if (!session) {
-    return null;
-  }
-
   const { data, error, isLoading, isValidating } = useSWR(
-    requiresPublicTarget
-      ? null
-      : ["dashboard", session.baseUrl, session.token, session.verifiedAt, externalTargetUsername ?? ""],
+    ["dashboard", session.baseUrl, session.verifiedAt, externalTargetUsername ?? ""],
     () => fetchDashboardSnapshot(session, { targetUsername: externalTargetUsername }),
     {
       refreshInterval: refreshIntervalMs,
@@ -561,8 +562,6 @@ export function DashboardPanel({ onInitialLoadStateChange }: DashboardPanelProps
     }
 
     const realtimeClient = new ScreepsRealtimeClient({
-      baseUrl: session.baseUrl,
-      token: session.token,
       reconnect: true,
       reconnectBaseMs: 1_200,
       reconnectMaxMs: 20_000,
@@ -635,7 +634,7 @@ export function DashboardPanel({ onInitialLoadStateChange }: DashboardPanelProps
       }
       realtimeClient.disconnect();
     };
-  }, [realtimeChannels, session.baseUrl, session.token]);
+  }, [realtimeChannels, session.baseUrl]);
 
   useEffect(() => {
     function syncRingSize() {
@@ -678,20 +677,8 @@ export function DashboardPanel({ onInitialLoadStateChange }: DashboardPanelProps
     !data &&
       ((isLoading || isValidating) ? showDelayedLoading : Boolean(error && !shouldShowError))
   );
-  const guestHint =
-    session && !session.token.trim() && !externalTargetUsername
-      ? locale === "zh-CN"
-        ? "游客模式下请先在侧边栏搜索用户名，再查看公开用户页。"
-        : "In guest mode, search a username in the sidebar before opening a public profile."
-      : undefined;
-
   return (
     <section className="panel dashboard-panel">
-      {requiresPublicTarget ? (
-        <article className="card">
-          <p className="hint-text">{guestHint}</p>
-        </article>
-      ) : null}
       {shouldShowError ? <p className="error-text">{errorToMessage(error)}</p> : null}
 
       {shouldShowLoading ? (
@@ -822,6 +809,15 @@ export function DashboardPanel({ onInitialLoadStateChange }: DashboardPanelProps
               ) : null}
             </div>
           </article>
+
+          {!isPublicProfileView ? <StatsTrendPanel /> : null}
+          {!isPublicProfileView ? (
+            <RuntimeMonitorPanel
+              key={`${session.baseUrl}|${session.username}|${externalTargetUsername ?? ""}`}
+              cpuLimit={cpuLimit}
+              cpuUsed={cpuUsed}
+            />
+          ) : null}
 
           {groupedRooms.length ? (
             <>

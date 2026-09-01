@@ -26,3 +26,9 @@ dist
 out
 .*/
 !.github/
+
+.env
+.env.*
+!.env.example
+secrets/
+config/dashboard.json

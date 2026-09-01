@@ -1,7 +1,5 @@
 "use client";
 
-import { hasTauriRuntime } from "./platform";
-
 export type RuntimeLabel = "Desktop" | "Web";
 
 type VersionPayload = {
@@ -9,20 +7,6 @@ type VersionPayload = {
 };
 
 let appVersionPromise: Promise<string> | null = null;
-
-async function readVersionFromTauri(): Promise<string | null> {
-  try {
-    const appModule = await import("@tauri-apps/api/app");
-    const version = await appModule.getVersion();
-    if (typeof version === "string" && version.trim()) {
-      return version.trim();
-    }
-  } catch {
-    // Fall back to static version source when Tauri API is unavailable.
-  }
-
-  return null;
-}
 
 async function readVersionFromStaticFile(): Promise<string | null> {
   try {
@@ -42,7 +26,7 @@ async function readVersionFromStaticFile(): Promise<string | null> {
 }
 
 export function getRuntimeLabel(): RuntimeLabel {
-  return hasTauriRuntime() ? "Desktop" : "Web";
+  return "Web";
 }
 
 export async function getAppVersion(): Promise<string> {
@@ -51,13 +35,6 @@ export async function getAppVersion(): Promise<string> {
   }
 
   appVersionPromise = (async () => {
-    if (hasTauriRuntime()) {
-      const tauriVersion = await readVersionFromTauri();
-      if (tauriVersion) {
-        return tauriVersion;
-      }
-    }
-
     const staticVersion = await readVersionFromStaticFile();
     return staticVersion ?? "unknown";
   })();

@@ -1,0 +1,30 @@
+services:
+  dashboard:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3200:3000"
+    environment:
+      SCREEPS_CONFIG_FILE: /etc/screeps-dashboard/config.json
+      SCREEPS_TOKEN_FILE: /run/secrets/screeps_token
+      MAX_WS_PAYLOAD_BYTES: ${MAX_WS_PAYLOAD_BYTES:-1048576}
+      DASHBOARD_ALLOWED_ORIGINS: ${DASHBOARD_ALLOWED_ORIGINS:-}
+    volumes:
+      - ./config/dashboard.json:/etc/screeps-dashboard/config.json:ro
+    secrets:
+      - screeps_token
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/readyz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+secrets:
+  screeps_token:
+    file: ./secrets/screeps_token
