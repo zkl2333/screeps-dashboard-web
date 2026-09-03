@@ -83,8 +83,7 @@ a {
   text-decoration: none;
 }
 
-.page-center,
-.auth-loading {
+.page-center {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -92,8 +91,7 @@ a {
   padding: 20px;
 }
 
-.page-center-topbar,
-.auth-loading-topbar {
+.page-center-topbar {
   min-height: calc(100vh - 46px);
 }
 
@@ -123,22 +121,6 @@ a {
   border: 0;
 }
 
-.auth-shell {
-  width: 100%;
-  max-width: 100%;
-  height: 100vh;
-  min-height: 100vh;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  overflow: hidden;
-}
-
-.auth-shell-main {
-  min-height: 0;
-  overflow: auto;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
 .panel {
   min-width: 0;
   max-width: 100%;
@@ -157,11 +139,6 @@ a {
 
 .page-subtitle {
   display: none;
-}
-
-.login-panel {
-  max-width: 560px;
-  padding: 18px;
 }
 
 .form-grid {
@@ -429,28 +406,6 @@ a {
   display: inline-flex;
   gap: 8px;
   flex-wrap: wrap;
-}
-
-.login-mode-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
-.login-mode-row .check-field {
-  margin-left: auto;
-  border: 0;
-  background: transparent;
-  padding: 2px 0 2px 2px;
-  min-height: 0;
-}
-
-.login-mode-row .check-field:hover,
-.login-mode-row .check-field.active {
-  border-color: transparent;
-  background: transparent;
-  color: var(--text-soft);
 }
 
 .chip,
@@ -4306,13 +4261,8 @@ a {
 }
 
 @media (max-width: 760px) {
-  .page-center,
-  .auth-loading {
+  .page-center {
     padding: 12px;
-  }
-
-  .login-panel {
-    padding: 14px;
   }
 
   .shell-body {
@@ -4415,19 +4365,6 @@ a {
   .inline-select-option {
     padding: 11px 13px;
     font-size: 0.86rem;
-  }
-
-  .login-mode-row {
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-
-  .login-mode-row .check-field {
-    margin-left: 0;
-    padding: 8px 12px;
-    min-height: 38px;
-    font-size: 0.79rem;
-    border-radius: 10px;
   }
 
   .check-indicator {

@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useI18n } from "../lib/i18n/use-i18n";
 import { useAuthStore } from "../stores/auth-store";
 import { AppNav } from "./app-nav";
@@ -14,8 +13,6 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const { t } = useI18n();
   const session = useAuthStore((state) => state.session);
-  const clearSession = useAuthStore((state) => state.clearSession);
-  const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -26,12 +23,6 @@ export function AppShell({ children }: AppShellProps) {
     window.addEventListener("resize", handleWindowResize, { passive: true });
     return () => window.removeEventListener("resize", handleWindowResize);
   }, []);
-
-  async function handleSignOut() {
-    setMobileNavOpen(false);
-    clearSession();
-    router.replace("/login");
-  }
 
   function closeMobileNav() {
     setMobileNavOpen(false);
@@ -63,9 +54,6 @@ export function AppShell({ children }: AppShellProps) {
             <strong>{session?.username ?? t("app.guestLabel")}</strong>
             <span>{session?.baseUrl ?? t("app.guestModeHint")}</span>
           </div>
-          <button className="ghost-button topbar-action topbar-no-drag" onClick={handleSignOut}>
-            {t("app.signOut")}
-          </button>
         </div>
       </header>
 

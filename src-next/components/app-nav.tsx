@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Fragment, type FormEvent, useState } from "react";
 import { useI18n } from "../lib/i18n/use-i18n";
-import { useAuthStore } from "../stores/auth-store";
 
 interface NavItem {
   href: string;
@@ -19,8 +18,7 @@ interface NavItem {
     | "mail"
     | "console"
     | "rankings"
-    | "settings"
-    | "login";
+    | "settings";
 }
 
 interface AppNavProps {
@@ -116,14 +114,6 @@ function NavIcon({ icon }: { icon: NavItem["icon"] }) {
           <path d="m8 2.1.6 1.3 1.4.2.7-1.2 1.4.8-.3 1.3 1 1 .1 1.4 1.3.5v1.6l-1.3.5-.1 1.4-1 1 .3 1.3-1.4.8-.7-1.2-1.4.2-.6 1.3H8l-.6-1.3-1.4-.2-.7 1.2-1.4-.8.3-1.3-1-1-.1-1.4L1.8 8.8V7.2l1.3-.5.1-1.4 1-1-.3-1.3 1.4-.8.7 1.2 1.4-.2L8 2.1Z" />
         </svg>
       );
-    case "login":
-      return (
-        <svg className="nav-icon" viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M6.2 2.4H3.1c-.8 0-1.3.5-1.3 1.3v8.6c0 .8.5 1.3 1.3 1.3h3.1" />
-          <path d="m8.1 5 3 3-3 3" />
-          <path d="M5.4 8h5.7" />
-        </svg>
-      );
     default:
       return null;
   }
@@ -132,7 +122,6 @@ function NavIcon({ icon }: { icon: NavItem["icon"] }) {
 export function AppNav({ onNavigate }: AppNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const session = useAuthStore((state) => state.session);
   const { t, locale } = useI18n();
   const [publicSearchUsername, setPublicSearchUsername] = useState("");
   const resourcesLabel = t("nav.resourcesLabel");
@@ -159,83 +148,62 @@ export function AppNav({ onNavigate }: AppNavProps) {
     navigateToPublicPage("/user");
   }
 
-  const navItems: NavItem[] = session
-    ? [
-        {
-          href: "/user",
-          label: t("nav.userLabel"),
-          meta: "/user",
-          icon: "user",
-        },
-        {
-          href: "/rooms",
-          label: t("nav.roomsLabel"),
-          meta: "/rooms",
-          icon: "rooms",
-        },
-        {
-          href: "/resources",
-          label: resourcesLabel,
-          meta: "/resources",
-          icon: "resources",
-        },
-        {
-          href: "/map",
-          label: mapLabel,
-          meta: "/map",
-          icon: "map",
-        },
-        {
-          href: "/market",
-          label: marketLabel,
-          meta: "/market",
-          icon: "market",
-        },
-        {
-          href: "/messages",
-          label: mailLabel,
-          meta: "/messages",
-          icon: "mail",
-        },
-        {
-          href: "/console",
-          label: t("nav.consoleLabel"),
-          meta: "/console",
-          icon: "console",
-        },
-        {
-          href: "/rankings",
-          label: t("nav.rankingsLabel"),
-          meta: "/rankings",
-          icon: "rankings",
-        },
-        {
-          href: "/settings",
-          label: t("nav.settingsLabel"),
-          meta: "/settings",
-          icon: "settings",
-        },
-      ]
-    : [
-        {
-          href: "/rooms",
-          label: t("nav.roomsLabel"),
-          meta: "/rooms",
-          icon: "rooms",
-        },
-        {
-          href: "/rankings",
-          label: t("nav.rankingsLabel"),
-          meta: "/rankings",
-          icon: "rankings",
-        },
-        {
-          href: "/login",
-          label: t("nav.loginLabel"),
-          meta: "/login",
-          icon: "login",
-        },
-      ];
+  const navItems: NavItem[] = [
+    {
+      href: "/user",
+      label: t("nav.userLabel"),
+      meta: "/user",
+      icon: "user",
+    },
+    {
+      href: "/rooms",
+      label: t("nav.roomsLabel"),
+      meta: "/rooms",
+      icon: "rooms",
+    },
+    {
+      href: "/resources",
+      label: resourcesLabel,
+      meta: "/resources",
+      icon: "resources",
+    },
+    {
+      href: "/map",
+      label: mapLabel,
+      meta: "/map",
+      icon: "map",
+    },
+    {
+      href: "/market",
+      label: marketLabel,
+      meta: "/market",
+      icon: "market",
+    },
+    {
+      href: "/messages",
+      label: mailLabel,
+      meta: "/messages",
+      icon: "mail",
+    },
+    {
+      href: "/console",
+      label: t("nav.consoleLabel"),
+      meta: "/console",
+      icon: "console",
+    },
+    {
+      href: "/rankings",
+      label: t("nav.rankingsLabel"),
+      meta: "/rankings",
+      icon: "rankings",
+    },
+    {
+      href: "/settings",
+      label: t("nav.settingsLabel"),
+      meta: "/settings",
+      icon: "settings",
+    },
+  ];
 
   return (
     <nav className="app-nav" aria-label={t("nav.aria")}>
@@ -259,38 +227,36 @@ export function AppNav({ onNavigate }: AppNavProps) {
         );
       })}
 
-      {session ? (
-        <div className="nav-public-search-wrap">
-          <form className="nav-public-search" onSubmit={handlePublicSearchSubmit}>
-            <p className="nav-public-search-title">{t("nav.lookupTitle")}</p>
-            <input
-              className="nav-public-search-input"
-              type="text"
-              value={publicSearchUsername}
-              onChange={(event) => setPublicSearchUsername(event.currentTarget.value)}
-              placeholder={t("nav.lookupPlaceholder")}
-              aria-label={t("nav.lookupPlaceholder")}
-            />
-            <div className="nav-public-search-actions">
-              <button
-                className="tiny-button nav-public-search-button"
-                disabled={isPublicSearchDisabled}
-                type="submit"
-              >
-                {t("nav.lookupUserAction")}
-              </button>
-              <button
-                className="tiny-button nav-public-search-button"
-                disabled={isPublicSearchDisabled}
-                onClick={() => navigateToPublicPage("/resources")}
-                type="button"
-              >
-                {t("nav.lookupResourcesAction")}
-              </button>
-            </div>
-          </form>
-        </div>
-      ) : null}
+      <div className="nav-public-search-wrap">
+        <form className="nav-public-search" onSubmit={handlePublicSearchSubmit}>
+          <p className="nav-public-search-title">{t("nav.lookupTitle")}</p>
+          <input
+            className="nav-public-search-input"
+            type="text"
+            value={publicSearchUsername}
+            onChange={(event) => setPublicSearchUsername(event.currentTarget.value)}
+            placeholder={t("nav.lookupPlaceholder")}
+            aria-label={t("nav.lookupPlaceholder")}
+          />
+          <div className="nav-public-search-actions">
+            <button
+              className="tiny-button nav-public-search-button"
+              disabled={isPublicSearchDisabled}
+              type="submit"
+            >
+              {t("nav.lookupUserAction")}
+            </button>
+            <button
+              className="tiny-button nav-public-search-button"
+              disabled={isPublicSearchDisabled}
+              onClick={() => navigateToPublicPage("/resources")}
+              type="button"
+            >
+              {t("nav.lookupResourcesAction")}
+            </button>
+          </div>
+        </form>
+      </div>
     </nav>
   );
 }

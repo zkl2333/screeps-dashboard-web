@@ -9,9 +9,7 @@ export default function HomePage() {
   const router = useRouter();
   const {t} = useI18n();
   useEffect(() => {
-    void router.prefetch("/user");
-    void router.prefetch("/login");
-    router.replace("/login");
+    router.replace("/user");
   }, [router]);
   return <main className="page-center"><RouteTransition label={t("common.redirecting")} message={t("home.redirecting")} /></main>;
 }

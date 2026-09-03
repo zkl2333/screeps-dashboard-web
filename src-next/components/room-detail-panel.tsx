@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -483,17 +482,6 @@ export function RoomDetailPanel({ roomName, roomShard }: RoomDetailPanelProps) {
           </button>
         </form>
       </header>
-
-      {!session ? (
-        <article className="card">
-          <p className="hint-text">{t("rooms.loginToOpenDetail")}</p>
-          <div className="inline-actions">
-            <Link className="secondary-button" href="/login">
-              {t("nav.loginLabel")}
-            </Link>
-          </div>
-        </article>
-      ) : null}
 
       {error && !data ? (
         <p className="error-text">
